@@ -1,0 +1,11 @@
+{
+    "asset": "1b9ffad9ec8a77341b2fe600405e9e58",
+    "fileName": "01999643-5072-7358-a5fb-1f64e6fff272_Preview.png",
+    "prompt": "rustic house wall",
+    "negativePrompt": "",
+    "model": "575ecf67-4425-4939-97b9-5e138b8ee234",
+    "modelName": "Unity Texture2D",
+    "customSeed": 44419505,
+    "w3CTraceId": "069558c9d142af86ecda8222ced449dd",
+    "refinementMode": "Generation"
+}

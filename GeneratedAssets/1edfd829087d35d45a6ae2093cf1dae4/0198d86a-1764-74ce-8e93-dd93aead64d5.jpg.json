@@ -1,0 +1,20 @@
+{
+    "asset": "1edfd829087d35d45a6ae2093cf1dae4",
+    "fileName": "0198d86a-1764-74ce-8e93-dd93aead64d5.jpg",
+    "prompt": "A cool back of a card for a deck",
+    "negativePrompt": "",
+    "model": "73cd3343-4a41-4d96-b15d-10cd7a4db561",
+    "modelName": "Card Frames",
+    "customSeed": -1,
+    "w3CTraceId": "381a8bd221811799ffd2b0eb9eafea83",
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0
+}

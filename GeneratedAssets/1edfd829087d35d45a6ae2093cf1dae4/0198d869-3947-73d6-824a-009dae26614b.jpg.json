@@ -1,0 +1,20 @@
+{
+    "asset": "1edfd829087d35d45a6ae2093cf1dae4",
+    "fileName": "0198d869-3947-73d6-824a-009dae26614b.jpg",
+    "prompt": "The back of a spanish card ",
+    "negativePrompt": "",
+    "model": "73cd3343-4a41-4d96-b15d-10cd7a4db561",
+    "modelName": "Card Frames",
+    "customSeed": -1,
+    "w3CTraceId": "c8ac618cd203243b4ca1bda1e4d5af33",
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0
+}

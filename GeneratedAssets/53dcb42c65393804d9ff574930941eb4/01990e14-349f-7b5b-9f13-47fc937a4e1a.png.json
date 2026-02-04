@@ -1,0 +1,37 @@
+{
+    "asset": "53dcb42c65393804d9ff574930941eb4",
+    "fileName": "01990e14-349f-7b5b-9f13-47fc937a4e1a.png",
+    "prompt": "minimalist",
+    "negativePrompt": "",
+    "model": "f2a35032-8dc5-4e61-9df1-309542d7c053",
+    "modelName": "Tarot Cards",
+    "customSeed": -1,
+    "w3CTraceId": "0b33c6203c38cb06b813c70504cddd54",
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "971c3c5a2b033ed578dbd6b5a0bc2cc5"
+            },
+            {
+                "doodleReferenceType": 8,
+                "doodle": [],
+                "label": "Style",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "a6d9373ce6231854ebcf9a2656273f8a"
+            }
+        ]
+    },
+    "upscaleFactor": 0
+}

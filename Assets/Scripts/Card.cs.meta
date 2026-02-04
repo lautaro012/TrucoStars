@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: 823c1c449f15ab193995d0d3b6657fc8
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - meshRenderer: {instanceID: 0}
+  - deck: {fileID: 11400000, guid: b8352e60a5480ad30b0a5a52b931c470, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
