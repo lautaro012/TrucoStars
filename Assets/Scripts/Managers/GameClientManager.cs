@@ -79,7 +79,7 @@ public class GameClientManager : MonoBehaviour
         GameManager.Instance.OnRoundFinished += GM_OnRoundFinished;
         GameManager.Instance.AreAllPlayersConnected += GM_AreAllPlayersConnected;
         GameManager.Instance.OnRoundStarted += GM_OnRoundStarted;
-        GameManager.Instance.OnChangedTurn += GM_OnChangedTurn;
+        TurnManager.Instance.OnChangedTurn += GM_OnChangedTurn;
         GameManager.Instance.OnSomeoneCalledTruco += GM_OnSomeoneCalledTruco;
         GameManager.Instance.OnSomeoneCalledEnvido += GM_OnSomeoneCalledEnvido;
         GameManager.Instance.OnWaitingEnvidoConfirmation += GM_OnWaitingEnvidoConfirmation;
