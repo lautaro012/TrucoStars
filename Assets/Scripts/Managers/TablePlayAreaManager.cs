@@ -41,7 +41,7 @@ public class TablePlayAreaManager : MonoBehaviour
             Transform seatTf = Instantiate(playSlotPrefab, pos, rot);
             //*Seteo como padre a la mesa
             seatTf.SetParent(tablePlayArea, true);
-            //* HandView en el root del prefab (ajustá si está en un hijo)
+            //* Seats en el root del prefab (ajustá si está en un hijo)
             var playSlotView = seatTf.GetComponent<PlaySlotView>();
             PlayAreaBySeatIndex[i] = playSlotView;
 

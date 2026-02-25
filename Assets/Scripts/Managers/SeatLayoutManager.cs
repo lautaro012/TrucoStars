@@ -4,23 +4,23 @@ using UnityEngine;
 public class SeatCreatedEventArgs : EventArgs
 {
     public int SeatIndex;
-    public HandView HandView;
+    public SeatController Seat;
     public Transform SeatTransform;
 }
 
 public class SeatsLaidOutEventArgs : EventArgs
 {
-    public Dictionary<int, HandView> HandViewsBySeatIndex;
+    public Dictionary<int, SeatController> SeatsByIndex;
 }
 public class SeatLayoutManager : MonoBehaviour
 {
-    [SerializeField] Transform seatPrefab;
+    [SerializeField] GameObject seatPrefab;
     [SerializeField] Transform SeatRoot;
     public EventHandler<SeatCreatedEventArgs> OnSeatCreated;
     public EventHandler<SeatsLaidOutEventArgs> OnSeatsLaidOut;
     public void CreateSeats(int totalPlayers, Vector3 center, float radius, float heightY, float angleOffsetDeg = 0f)
     {
-        Dictionary<int, HandView> HandViewBySeats = new();
+        Dictionary<int, SeatController> Seats_Index = new();
 
         float anglePerSeat = 360f / totalPlayers;
 
@@ -40,23 +40,24 @@ public class SeatLayoutManager : MonoBehaviour
             Vector3 lookAt = new Vector3(center.x, heightY, center.z);
             Vector3 dir = (lookAt - pos);
             dir.y = 0f;
+            
             Quaternion rot = dir.sqrMagnitude > 0.0001f
                 ? Quaternion.LookRotation(dir, Vector3.up)
                 : Quaternion.identity;
 
             //* Instanciación (seatPrefab es Transform → devuelve Transform)
-            Transform seatTf = Instantiate(seatPrefab, pos, rot);
+            GameObject seatTf = Instantiate(seatPrefab, pos, rot);
             //*Seteo como padre a la mesa
-            seatTf.SetParent(SeatRoot, true);
-            //* HandView en el root del prefab (ajustá si está en un hijo)
-            var hv = seatTf.GetComponent<HandView>();
-            HandViewBySeats[i] = hv;
+            seatTf.transform.SetParent(SeatRoot, true);
+            //* Seats en el root del prefab (ajustá si está en un hijo)
+            var hv = seatTf.GetComponent<SeatController>();
+            Seats_Index[i] = hv;
 
             OnSeatCreated?.Invoke(this, new SeatCreatedEventArgs
             {
                 SeatIndex = i,
-                HandView = hv,
-                SeatTransform = seatTf
+                Seat = hv,
+                SeatTransform = seatTf.transform
             });
         }
         GameManager.Instance.LayoutReadyServerRpc();

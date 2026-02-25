@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using System.Linq;
+using Unity.VisualScripting;
 
 public class OnWaitingConfirmationArgs : EventArgs
 {
@@ -72,6 +73,10 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private DeckSO deckSO;
     [SerializeField] private Table table;
 
+    [Header("VALORES PARA EL INICIO DEL JUEGO")]
+    [SerializeField] private int center = 1;
+    [SerializeField] private float radius = 1.5f;
+    [SerializeField] private int heightY = -90;
     //? Data del jugador, incluye index de Asiento, ClientID, equipo y cartas actuales en mano 
     public struct PlayerData : INetworkSerializable
     {
@@ -105,7 +110,7 @@ public class GameManager : NetworkBehaviour
 
     //? VARIABLES PARA DEFINIR POSICIONES
     private Dictionary<int, PlayerData> Seats;
-    private Dictionary<int, HandView> handViews_Seats;
+    private Dictionary<int, SeatController> Seats_index;
     private Dictionary<ulong, int> clientsId_Seats;
     private Dictionary<int, PlaySlotView> playSlots_Seats;
     private Dictionary<int, int> envidoValue_Seats;
@@ -163,7 +168,7 @@ public class GameManager : NetworkBehaviour
         Instance = Instance != null ? Instance : this;
         clientsId_Seats = new Dictionary<ulong, int>();
         Seats = new Dictionary<int, PlayerData>();
-        handViews_Seats = new Dictionary<int, HandView>();
+        Seats_index = new Dictionary<int, SeatController>();
         playSlots_Seats = new Dictionary<int, PlaySlotView>();
         envidoValue_Seats = new();
         seatLayoutManager.OnSeatCreated += SeatLayoutManager_OnSeatCreated;
@@ -192,12 +197,13 @@ public class GameManager : NetworkBehaviour
     //? EVENTOS LOCALES
     private void SeatLayoutManager_OnSeatCreated(object sender, SeatCreatedEventArgs e)
     {
-        handViews_Seats[e.SeatIndex] = e.HandView;
+        Seats_index[e.SeatIndex] = e.Seat;
     }
     private void TablePlayAreaManager_OnSlotLaidOut(object sender, OnSlotsLaidOutArgs e)
     {
         playSlots_Seats = e.PlayAreaBySeatIndex;
     }
+
 
 
     //? Empieza el juego, Asigna los asientos, Baraja las cartas y Create lo asienots y los jugadores
@@ -211,9 +217,9 @@ public class GameManager : NetworkBehaviour
         CreateSeatsAndPlayAreaClientRpc(
             totalPlayers,
             Vector3.zero,
-            1,
-            1.5f,
-            -90
+            center,
+            radius,
+            heightY
         );
     }
 
@@ -380,7 +386,7 @@ public class GameManager : NetworkBehaviour
         {
             var p = players[i];
             bool isMine = p.clientId == myId;
-            handViews_Seats[p.seatIndex].SetPlayerData(p.seatIndex, p.clientId, p.team, p.playerId, isMine);
+            Seats_index[p.seatIndex].SetPlayerData(p.seatIndex, p.clientId, p.team, p.playerId, isMine);
         }
     }
 
@@ -399,7 +405,7 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.SpecifiedInParams)]
     private void CreateCardsClientRpc(int envidoPoints, int[] cards, int seatindex, RpcParams rpcParams = default)
     {
-        handViews_Seats[seatindex].SetCardsIds(cards);
+        Seats_index[seatindex].SetCardsIds(cards);
         SentEnvidoValue?.Invoke(this, new OnSentEnvidoArgs
         {
             value = envidoPoints
@@ -465,7 +471,7 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void RestartCardsClientRpc(int seat)
     {
-        handViews_Seats[seat].RestarCards();
+        Seats_index[seat].RestarCards();
         playSlots_Seats[seat].RestartPlaySlot();
     }
     //? --- FUNCIONES DE CAMBIOS DE VALORES --- */
@@ -635,9 +641,9 @@ public class GameManager : NetworkBehaviour
     private void MoveCardToTableClientRpc(int cardIndex, int clientSeat, int cardId)
     {
         PlaySlotView playSlot = playSlots_Seats[clientSeat];
-        HandView hv = handViews_Seats[clientSeat];
+        SeatController Seat = Seats_index[clientSeat];
         playSlot.SpawnOrUpdateCard(cardId);
-        hv.HideCard(cardIndex);
+        Seat.HideCard(cardIndex);
     }
 
     //? Resuelve la ronda segun las cartas jugadas
@@ -1136,6 +1142,27 @@ public class GameManager : NetworkBehaviour
     private void NextEnvidoStage(EnvidoStage nextStage)
     {
         envidoStage = nextStage;
+    }
+
+    //? RECIBE LA ROTACION DE LA CABEZA DEL JUGADOR
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SyncHeadRotationServerRpc(int seatIndex, Quaternion headRotation, RpcParams rpc = default)
+    {
+        Debug.Log("call sync");
+        SyncHeadRotationClientRpc(seatIndex, headRotation);
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void SyncHeadRotationClientRpc(int seatIndex, Quaternion headRotation)
+    {
+        if (Seats_index.TryGetValue(seatIndex, out var seat))
+        {
+            if (seat.TryGetComponent<SeatController>(out var controller))
+            {
+                Debug.Log("call reciebe head");
+                controller.ReceiveHeadRotation(headRotation);
+            }
+        }
     }
 
     //? Metodos para el TurnManager
