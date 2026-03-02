@@ -12,8 +12,8 @@ public class OnChangeTurn_TurnChangedArgs
 public class TurnManager : NetworkBehaviour
 {
     public static TurnManager Instance { get; private set;}
-    private NetworkVariable<int> currentTurnSeatIndex = new(-1);
-    public NetworkVariable<int> NextRoundLeaderSeatIndex = new(-1);
+    private int currentTurnSeatIndex = -1;
+    public int NextRoundLeaderSeatIndex = -1;
     
     public event EventHandler<OnChangeTurn_TurnChangedArgs> OnChangedTurn;
 
@@ -22,34 +22,11 @@ public class TurnManager : NetworkBehaviour
         if (Instance != null && Instance != this) Destroy(gameObject);
         else Instance = this;
     }
-    
-    public override void OnNetworkSpawn()
+     // Sintaxis Unity 6.3
+    [Rpc(SendTo.Everyone)]
+    private void UpdateCurrentTurnRpc(int currentTurnTeam, ulong currentClientId, int round, bool ImLastTurn, int currentTurnIndex)
     {
-        if (IsServer)
-        {
-            currentTurnSeatIndex.OnValueChanged += CurrenTurn_OnValueChanged;
-        }
-    }
-
-    private void CurrenTurn_OnValueChanged(int previousValue, int newValue)
-    {
-        if (!IsServer || newValue == -1) return;
-
-
-        var playerData = GameManager.Instance.GetPlayerData(newValue); 
-        int currentTeamTurn = playerData.team;
-        ulong currentClientId = playerData.clientId;
-  
-        int[] lastSeats = GameManager.Instance.GetLastSeats();
-        
-        bool isLast = (newValue == lastSeats[0] || newValue == lastSeats[1]);
-
-        UpdateCurrentTurnRpc(currentTeamTurn, currentClientId, GameManager.Instance.GetCurrentRound(), isLast);
-    }
-
-    [Rpc(SendTo.Everyone)] // Sintaxis Unity 6.3
-    private void UpdateCurrentTurnRpc(int currentTurnTeam, ulong currentClientId, int round, bool ImLastTurn)
-    {
+        currentTurnSeatIndex = currentTurnIndex;
         OnChangedTurn?.Invoke(this, new OnChangeTurn_TurnChangedArgs
         {
             team = currentTurnTeam,
@@ -65,14 +42,24 @@ public class TurnManager : NetworkBehaviour
 
         if (winnerSeat >= 0)
         {
-            currentTurnSeatIndex.Value = winnerSeat;
+            currentTurnSeatIndex = winnerSeat;
         }
         else
         {
-            currentTurnSeatIndex.Value = (currentTurnSeatIndex.Value + 1) % GameManager.Instance.GetTotalPlayers();
+            currentTurnSeatIndex = (currentTurnSeatIndex + 1) % GameManager.Instance.GetTotalPlayers();
         }
+
+        var playerData = GameManager.Instance.GetPlayerData(currentTurnSeatIndex); 
+        int currentTeamTurn = playerData.team;
+        ulong currentClientId = playerData.clientId;
+  
+        int[] lastSeats = GameManager.Instance.GetLastSeats();
+        
+        bool isLast = (currentTurnSeatIndex == lastSeats[0]) || (currentTurnSeatIndex == lastSeats[1]);
+
+        UpdateCurrentTurnRpc(currentTeamTurn, currentClientId, GameManager.Instance.GetCurrentRound(), isLast, currentTurnSeatIndex);
     }
 
-    public bool IsSeatIndexTurn(int seatindex) => currentTurnSeatIndex.Value == seatindex;
-    public int GetCurrentTurnIndex() => currentTurnSeatIndex.Value;
+    public bool IsSeatIndexTurn(int seatindex) => currentTurnSeatIndex == seatindex;
+    public int GetCurrentTurnIndex() => currentTurnSeatIndex;
 }

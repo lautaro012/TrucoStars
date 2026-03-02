@@ -677,7 +677,6 @@ public class GameManager : NetworkBehaviour
         }
         if (SeatsWhitBestCards.Count == 1)
         {
-            TurnManager.Instance.AdvanceTurn(SeatsWhitBestCards[0]);
             return SeatsWhitBestCards[0];   //? SI HUBO UN SOLO ASIENTO GANADOR, SE GUARDA Y EMPIEZA LA SIGUIENTE RONDA EL  
         }
 
@@ -686,17 +685,18 @@ public class GameManager : NetworkBehaviour
         bool sameTeam = SeatsWhitBestCards.TrueForAll(s => Seats[s].team == team0);
         if (sameTeam)
         {
-            TurnManager.Instance.AdvanceTurn(SeatsWhitBestCards[0]); //? TURNO DEL GANADOR
             return SeatsWhitBestCards[0]; //? QUEDA COMO GANADOR EL QUE JUGO LA PRIMER CARTA ALTA
         }
-        TurnManager.Instance.AdvanceTurn(0); //? EMPIEZA EL PRIMER JUGADOR
+
         return -1; //? EMPATE ENTRE EQUIPOS
     }
 
     private void AnnounceNextRound(int nextLeader)
     {
-        TurnManager.Instance.NextRoundLeaderSeatIndex.Value = nextLeader;
+        TurnManager.Instance.NextRoundLeaderSeatIndex = nextLeader;
+
         StartNextRound(nextLeader);
+        TurnManager.Instance.AdvanceTurn(nextLeader);
     }
     private void StartNextRound(int nextLeader)
     {
@@ -1159,7 +1159,7 @@ public class GameManager : NetworkBehaviour
         {
             if (seat.TryGetComponent<SeatController>(out var controller))
             {
-                Debug.Log("call reciebe head");
+                // Debug.Log("call reciebe head");
                 controller.ReceiveHeadRotation(headRotation);
             }
         }
