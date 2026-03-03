@@ -6,24 +6,59 @@ public class PlaySlotView : MonoBehaviour
     [SerializeField] GameObject cardPrefab;
     [SerializeField] Transform Deck;
     private int seatIndex;
-    private int[] cardsIndexes;
+    private Card[] cardsInTable;
     private int nextFreeSlot = 0;
     private void Awake()
     {
-        cardsIndexes = new int[3];
+        cardsInTable = new Card[3];
         Deck.gameObject.SetActive(false);
     }
-    public void SpawnOrUpdateCard(int cardId)
+    private void Start()
     {
+        SpawnCardsInTable();
+    }
+
+    //? Inicia las cartas de la mesa y las esconde
+    private void SpawnCardsInTable()
+    {
+        for (int i = 0; i < cardsInTable.Length; i++)
+        {
+            GameObject cardObject = Instantiate(cardPrefab, PlaySlotAnchors[i]);
+            cardObject.transform.localPosition = Vector3.zero;
+            Card newCard = cardObject.GetComponent<Card>();
+            newCard.gameObject.SetActive(false);
+            cardsInTable[i] = newCard;
+        }
+    }
+    public void PlayThisCard(int cardId, Transform origin)
+    {
+        /*
         cardsIndexes[nextFreeSlot] = cardId;
         GameObject cardObject = Instantiate(cardPrefab, PlaySlotAnchors[nextFreeSlot]);
         Transform cardTransform = cardObject.transform;
         cardTransform.localPosition = Vector3.zero;
         Card newCard = cardObject.GetComponent<Card>();
-        newCard.transform.localRotation = Quaternion.Euler(90f, 0, 0);
-        newCard.SetCardParentIndex(nextFreeSlot);
-        newCard.SetCardSObyIndex(cardId);
+        */
+        Transform destiny = PlaySlotAnchors[nextFreeSlot];
+
+        Card playedCard = cardsInTable[nextFreeSlot];
+        RevealPlayedCard(playedCard,cardId);
+        
+        //* La movemos al origen y la hacemos mover
+        playedCard.transform.SetPositionAndRotation(origin.transform.position, origin.transform.rotation);
+        playedCard.SmoothMoveCardTo(destiny, 0.4f);
+        
         nextFreeSlot++;
+    }
+
+    /// <summary>
+    /// Setea los datos de la carta y la revela
+    /// </summary>
+    private void RevealPlayedCard(Card playedCard, int cardID)
+    {
+        playedCard.SetCardParentIndex(nextFreeSlot);
+        playedCard.SetCardSObyIndex(cardID);
+        playedCard.gameObject.SetActive(true);
     }
     public void SetSeatIndex(int seat)
     {
@@ -36,13 +71,9 @@ public class PlaySlotView : MonoBehaviour
     public void RestartPlaySlot()
     {
         nextFreeSlot = 0;
-        for (int i = 0; i < cardsIndexes.Length; i++)
+        for (int i = 0; i < cardsInTable.Length; i++)
         {
-            cardsIndexes[i] = -1;
-            for (int j = PlaySlotAnchors[i].childCount - 1; j >= 0; j--)
-            {
-                Destroy(PlaySlotAnchors[i].GetChild(j).gameObject);
-            }
+            cardsInTable[i].gameObject.SetActive(false);
         }
     }
 

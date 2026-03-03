@@ -214,13 +214,7 @@ public class GameManager : NetworkBehaviour
         roundFinished.Value = false;
         AssignSeats();
         DrawCards();
-        CreateSeatsAndPlayAreaClientRpc(
-            totalPlayers,
-            Vector3.zero,
-            center,
-            radius,
-            heightY
-        );
+        CreateSeatsAndPlayAreaClientRpc(totalPlayers, Vector3.zero, radius, heightY, 0f);
     }
 
     //? ClientRPC que manda a crear a todos los jugadores sus asientos y donde van a jugar las cartas en la mesa 
@@ -471,7 +465,7 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void RestartCardsClientRpc(int seat)
     {
-        Seats_index[seat].RestarCards();
+        Seats_index[seat].RestartCards();
         playSlots_Seats[seat].RestartPlaySlot();
     }
     //? --- FUNCIONES DE CAMBIOS DE VALORES --- */
@@ -642,8 +636,8 @@ public class GameManager : NetworkBehaviour
     {
         PlaySlotView playSlot = playSlots_Seats[clientSeat];
         SeatController Seat = Seats_index[clientSeat];
-        playSlot.SpawnOrUpdateCard(cardId);
-        Seat.HideCard(cardIndex);
+        Transform origin = Seat.HideCardAndGetOrigin(cardIndex);
+        playSlot.PlayThisCard(cardId, origin);
     }
 
     //? Resuelve la ronda segun las cartas jugadas
@@ -1148,7 +1142,6 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void SyncHeadRotationServerRpc(int seatIndex, Quaternion headRotation, RpcParams rpc = default)
     {
-        Debug.Log("call sync");
         SyncHeadRotationClientRpc(seatIndex, headRotation);
     }
 
@@ -1159,7 +1152,6 @@ public class GameManager : NetworkBehaviour
         {
             if (seat.TryGetComponent<SeatController>(out var controller))
             {
-                // Debug.Log("call reciebe head");
                 controller.ReceiveHeadRotation(headRotation);
             }
         }

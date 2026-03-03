@@ -18,6 +18,7 @@ public class SeatController : MonoBehaviour
     [Header("Cámara y Visión")]
     [SerializeField] private Transform cameraMount; 
     [SerializeField] private GameObject myModelHead; // (Opcional) la cabeza para apagarlo si te tapa la visión
+    
     public float mouseSensitivity = 250f;
     public float minPitch = -60f;
     public float maxPitch = 30f;
@@ -50,10 +51,13 @@ public class SeatController : MonoBehaviour
         }
         else
         {
-            // 3. Si es un rival, suavizamos la rotación de su cabeza usando Lerp
-            if (cameraMount != null)
+        if (myModelHead != null)
             {
-                cameraMount.localRotation = Quaternion.Lerp(cameraMount.localRotation, targetHeadRotation, Time.deltaTime * 15f);
+                myModelHead.transform.localRotation = Quaternion.Lerp(
+                    myModelHead.transform.localRotation, 
+                    targetHeadRotation, 
+                    Time.deltaTime * 15f
+                );
             }
         }
     }
@@ -86,7 +90,7 @@ public class SeatController : MonoBehaviour
     {
         Camera mainCam = Camera.main;
         if (mainCam != null && cameraMount != null)
-        {
+        { 
             // Robamos la cámara y la pegamos en la cabeza
             mainCam.transform.SetParent(cameraMount);
             mainCam.transform.localPosition = Vector3.zero;
@@ -102,9 +106,9 @@ public class SeatController : MonoBehaviour
         }
     }
 
-private void HandleCameraMovement()
+    private void HandleCameraMovement()
     {
-        if (Input.GetMouseButton(1)) // Clic Derecho
+        if (Input.GetMouseButton(1))
         {
             Cursor.lockState = CursorLockMode.Locked;
 
@@ -117,14 +121,21 @@ private void HandleCameraMovement()
             yRotation += mouseX;
             yRotation = Mathf.Clamp(yRotation, -maxYaw, maxYaw);
 
-            cameraMount.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
+            // Calculamos la rotación una sola vez
+            Quaternion lookRotation = Quaternion.Euler(xRotation, yRotation, 0f);
+
+            // Se la aplicamos al pecho (Cámara)
+            if (cameraMount != null) cameraMount.localRotation = lookRotation;
+            
+            // Se la aplicamos a TU cabeza localmente
+            if (myModelHead != null) myModelHead.transform.localRotation = lookRotation;
         }
         else
         {
             Cursor.lockState = CursorLockMode.None;
         }
 
-        // --- NUEVO: Enviar la rotación por la red sin saturar ---
+        // --- Enviar la rotación por la red sin saturar ---
         syncTimer += Time.deltaTime;
         if (syncTimer >= syncRate && cameraMount != null)
         {
@@ -185,24 +196,32 @@ private void HandleCameraMovement()
         }
     }
 
-    public void HideCard(int slotIndex)
-    {
-        handHolderPoints[slotIndex].gameObject.SetActive(false);
+    public Transform HideCardAndGetOrigin(int slotIndex){
+        Card card = HandCards[slotIndex];
+        if (card != null)
+        {
+            // Guardamos su posición actual antes de apagarla
+            Transform originTransform = card.transform; 
+            
+            // Ocultamos la carta de nuestra mano (la ilusión)
+            card.gameObject.SetActive(false); 
+            
+            return originTransform;
+        }
+        return null;
     }
 
-    public void RestarCards()
+    public void RestartCards()
     {
-        for (int i = 0; i < handHolderPoints.Length; i++)
+        for (int i = 0; i < HandCards.Length; i++)
         {
-            handHolderPoints[i].gameObject.SetActive(true);
+            HandCards[i].gameObject.SetActive(true);
         }
     }
     public void ReceiveHeadRotation(Quaternion newRotation)
     {
-        Debug.Log("recibido");
         if (!isLocal)
         {
-            Debug.Log("new rotation: " + newRotation );
             targetHeadRotation = newRotation;
         }
     }
