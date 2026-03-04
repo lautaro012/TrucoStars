@@ -333,8 +333,8 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void CreatePlayerHandsServerRpc()
     {
-        StartNewHand();
         SetPlayersDataClientRPC(Seats.Values.ToArray());
+        StartNewHand();
         for (int i = 0; i < totalPlayers; i++)
         {
             int[] cards = Seats[i].cardsInHands;            
