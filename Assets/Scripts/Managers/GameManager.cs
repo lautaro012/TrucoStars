@@ -340,7 +340,10 @@ public class GameManager : NetworkBehaviour
             int[] cards = Seats[i].cardsInHands;            
             CreateCardsClientRpc(envidoValue_Seats[i], cards, Seats[i].seatIndex, GetRpcTargetParams(new[] { Seats[i].clientId }));
         }
+        DealAnimationClientRpc(LastSeats[0]);
     }
+
+
     [Rpc(SendTo.Everyone)]
     private void SetPlayersDataClientRPC(PlayerData[] players)
     {
@@ -415,7 +418,6 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void ShowDeckClientRpc(int[] lastSeats)
     {
-        //Debug.Log("le toca el mazo al cliente " + lastSeats[0] + " y devuelve " + lastSeats[1]);
         PlaySlotView LastplaySlot = playSlots_Seats[lastSeats[0]];
         PlaySlotView previousLastPlaySlot = playSlots_Seats[lastSeats[1]];
         LastplaySlot.LastTurn(true);
@@ -423,7 +425,10 @@ public class GameManager : NetworkBehaviour
     }
 
 
-    //? Le pide al Servidor empezar la siguiente mano 
+    /// <summary>
+    /// NUEVA: APAGA LAS CARTAS DE CADA JUGADOR, EMPIEZA LA NUEVA MANO, DISPARA LA ANIMACION DE REPARTIR Y MUESTRA LAS CARTAS
+    /// </summary>
+    /// <param name="rpc"></param>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void RequestStartNextHandServerRpc(RpcParams rpc = default)
     {
@@ -432,24 +437,66 @@ public class GameManager : NetworkBehaviour
             Debug.Log("NO TERMINO LA RONDA TODAVIA " + roundFinished.Value);
             return;
         }
+
+        // 1. Apagamos todas las manos y limpiamos la mesa de todos los jugadores
+        for (int i = 0; i < totalPlayers; i++)
+        {
+             ClearTableAndHideHandsClientRpc(Seats[i].seatIndex);
+        }
+
         StartNewHand();
         roundFinished.Value = false;
-        //TurnManager.Instance.AdvanceTurn(-1);
-
-        //? ARRANCA LA NUEVA MANO
+        
+        // 2. Calculamos las cartas matemáticamente
         DrawCards();
+
+        // 3. Avisamos a los clientes qué cartas les tocaron en memoria
         for (int i = 0; i < totalPlayers; i++)
         {
             int[] cards = Seats[i].cardsInHands;
-            RestartCardsClientRpc(Seats[i].seatIndex);
             CreateCardsClientRpc(envidoValue_Seats[i], cards, Seats[i].seatIndex, GetRpcTargetParams(new[] { Seats[i].clientId }));
         }
+
+        // 4. ¡Disparamos la ilusión visual! (LastSeats[0] es el dealer)
+        DealAnimationClientRpc(LastSeats[0]);
     }
+
+    /// <summary>
+    /// Limpia las cartas de la mesa y APAGA las manos
+    /// </summary>
+    /// <param name="seat"></param>
     [Rpc(SendTo.Everyone)]
-    private void RestartCardsClientRpc(int seat)
+    private void ClearTableAndHideHandsClientRpc(int seat)
     {
-        Seats_index[seat].RestartCards();
+        // LLAMAMOS AL NUEVO METODO PARA APAGAR LAS CARTAS
+        Seats_index[seat].ClearHand(); 
         playSlots_Seats[seat].RestartPlaySlot();
+    }
+
+    /// <summary>
+    /// Ejecuta la animación y LUEGO enciende las manos
+    /// </summary>
+    /// <param name="dealerSeat"></param>
+[Rpc(SendTo.Everyone)]
+    private void DealAnimationClientRpc(int dealerSeat)
+    {
+        PlaySlotView dealerSlot = playSlots_Seats[dealerSeat];
+        
+        // RECOLECTAMOS LOS ANCHORS DE LA MESA
+        Transform[] anchors = new Transform[totalPlayers];
+        for(int i=0; i < totalPlayers; i++)
+        {
+            anchors[i] = playSlots_Seats[i].GetShuffleCardAnchor(); 
+        }
+
+        tablePlayAreaManager.StartCoroutine(tablePlayAreaManager.DealCardsAnimation(dealerSlot, anchors, () => 
+        {
+            // AL TERMINAR, PRENDEMOS LAS CARTAS
+            foreach (var seat in Seats_index.Values)
+            {
+                seat.ShowCardsInHand(); 
+            }
+        }));
     }
     //? --- FUNCIONES DE CAMBIOS DE VALORES --- */
 

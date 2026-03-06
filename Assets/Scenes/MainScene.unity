@@ -165,6 +165,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TablePlayAreaManager
   playSlotPrefab: {fileID: 1690342795552499929, guid: 33a067f5b3223684db552514dd14a3da, type: 3}
   tablePlayArea: {fileID: 1555776494}
+  cardPrefab: {fileID: 5229078745881043896, guid: d6683f07cbbd27f82a4e7afd1d9b6186, type: 3}
 --- !u!1 &12516711
 GameObject:
   m_ObjectHideFlags: 0
@@ -5726,7 +5727,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   totalPlayers: 2
-  pointsToWin: 15
   testLobby: {fileID: 1372640265}
   seatLayoutManager: {fileID: 63229253}
   tablePlayAreaManager: {fileID: 1419909}
@@ -5775,8 +5775,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TurnManager
   ShowTopMostFoldoutHeaderGroup: 1
-  NextRoundLeaderSeatIndex:
-    m_InternalValue: -1
+  NextRoundLeaderSeatIndex: -1
 --- !u!1001 &1230160730
 PrefabInstance:
   m_ObjectHideFlags: 0

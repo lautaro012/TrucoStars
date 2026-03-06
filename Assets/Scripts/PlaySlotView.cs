@@ -5,6 +5,8 @@ public class PlaySlotView : MonoBehaviour
     [SerializeField] Transform[] PlaySlotAnchors;
     [SerializeField] GameObject cardPrefab;
     [SerializeField] Transform Deck;
+    [SerializeField] Transform ShuffledCardAnchor;
+
     private int seatIndex;
     private Card[] cardsInTable;
     private int nextFreeSlot = 0;
@@ -82,4 +84,6 @@ public class PlaySlotView : MonoBehaviour
         if (ImLastTurn) Deck.gameObject.SetActive(true);
         else Deck.gameObject.SetActive(false);
     }
+    public Transform GetShuffleCardAnchor() => ShuffledCardAnchor;
+    public Transform GetDeckPosition() => Deck;
 }

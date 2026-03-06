@@ -157,10 +157,11 @@ public class SeatController : MonoBehaviour
             {
                 GameObject cardObject = Instantiate(cardPrefab, handHolderPoints[i]);
                 Transform cardTransform = cardObject.transform;
-                cardTransform.localPosition = Vector3.zero;
+                cardTransform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                 Card newCard = cardObject.GetComponent<Card>();
                 newCard.SetCardParentIndex(i);
                 HandCards[i] = newCard;
+                newCard.gameObject.SetActive(false);
             }
         }
     }
@@ -211,7 +212,7 @@ public class SeatController : MonoBehaviour
         return null;
     }
 
-    public void RestartCards()
+    public void ShowCardsInHand()
     {
         for (int i = 0; i < HandCards.Length; i++)
         {
@@ -223,6 +224,16 @@ public class SeatController : MonoBehaviour
         if (!isLocal)
         {
             targetHeadRotation = newRotation;
+        }
+    }
+    public void ClearHand()
+    {
+        for (int i = 0; i < HandCards.Length; i++)
+        {
+            if (HandCards[i] != null)
+            {
+                HandCards[i].gameObject.SetActive(false);
+            }
         }
     }
 }

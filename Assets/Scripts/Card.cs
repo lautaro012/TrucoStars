@@ -78,7 +78,7 @@ public class Card : MonoBehaviour
         Quaternion endRot = Quaternion.Euler(90f, 0f, randomZ);
 
         float timeElapsed = 0f;
-        float archHeight = 0.5f; // Ajustá esto para que vuele más o menos alto
+        float archHeight = 0.2f; // Ajustá esto para que vuele más o menos alto
 
         while (timeElapsed < duration)
         {
