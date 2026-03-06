@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Unity.Mathematics;
 using Unity.Netcode;
 using UnityEngine;
@@ -19,6 +20,12 @@ public class Card : MonoBehaviour
          cardParentIndex = index;
     }
 
+    //* SETEA EL CARDSO SEGUN EL INDEX
+    public void SetCardSObyIndex(int cardIndex)
+    {
+        CardSO cardData = DeckManager.Instance.GetCardByIndex(cardIndex);
+        SetCardData(cardData);
+    }
     //* RECIBE LA CARTA Y LE APLICA SU TEXTURA
     private void SetCardData(CardSO cardData ) {
         cardSO = cardData;
@@ -37,12 +44,6 @@ public class Card : MonoBehaviour
         );
         frontRenderer.material = newMat; 
     }
-    //* SETEA EL CARDSO SEGUN EL INDEX
-    public void SetCardSObyIndex(int cardIndex)
-    {
-        CardSO cardData = DeckManager.Instance.GetCardByIndex(cardIndex);
-        SetCardData(cardData);
-    }
     public CardSO GetCardSO()
     {
         if (cardSO == null) Debug.LogWarning("CARDSO from card NULL");
@@ -55,9 +56,50 @@ public class Card : MonoBehaviour
     public void DestroySelf() {
         Destroy(gameObject);
     }
-    public void UpdateCardPosition(Transform newPosition){
-        transform.position = newPosition.position;  
-        transform.rotation = newPosition.rotation; 
+
+    /// <summary>
+    /// Mueve una carta hacia un destino en un tiempo float determinado
+    /// </summary>
+    /// <param name="destiny"></param>
+    /// <param name="Time"></param>
+    public void SmoothMoveCardTo(Transform destiny, float time){
+        StartCoroutine(MoveRoutine(destiny,time));
+    }
+
+    private IEnumerator MoveRoutine(Transform target, float duration)
+    {
+        Vector3 startPos = transform.position;
+        Quaternion startRot = transform.rotation;
+        
+        // 2. Definimos la posición final (el anclaje) y su rotación plana (acostada)
+        Vector3 endPos = target.position;
+        // Le damos un pequeño desvío en Z para que no parezca perfecta de robot
+        float randomZ = UnityEngine.Random.Range(-5f, 5f);
+        Quaternion endRot = Quaternion.Euler(90f, 0f, randomZ);
+
+        float timeElapsed = 0f;
+        float archHeight = 0.2f; // Ajustá esto para que vuele más o menos alto
+
+        while (timeElapsed < duration)
+        {
+            timeElapsed += Time.deltaTime;
+            // 't' va de 0 a 1
+            float t = timeElapsed / duration; 
+
+            // 3. El movimiento suave entre A y B
+            Vector3 currentPos = Vector3.Lerp(startPos, endPos, t);
+            
+            // 4. La magia de la curva usando Mathf.Sin
+            currentPos.y += Mathf.Sin(t * Mathf.PI) * archHeight;
+            
+            // 5. La rotación suave y la posicion
+            transform.SetPositionAndRotation(currentPos, Quaternion.Lerp(startRot, endRot, t));
+            yield return null; // Esperamos al siguiente frame
+        }
+
+        // 6. Al terminar, la emparentamos a la mesa y aseguramos que quede perfecta
+        transform.SetParent(target);
+        transform.SetPositionAndRotation(endPos, endRot);
     }
     public void SetCardMaterial(Material material) {
         frontRenderer.material = material;

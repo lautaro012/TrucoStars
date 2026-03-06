@@ -15,6 +15,7 @@ public class EnvidoButtonsUI : MonoBehaviour
     [SerializeField] Transform SubButtonsParent;
     private bool areButtonsHide = true;
     private bool stageEnded = false;
+    private bool lastCanCallEnvido = false;
     private void Awake()
     {
         MainButton.onClick.AddListener(() =>
@@ -70,16 +71,25 @@ public class EnvidoButtonsUI : MonoBehaviour
     {
         Hide();
         stageEnded = true;
+        UpdateButtonVisibility(); 
     }
     private void GCM_OnRoundStarted(object sender, EventArgs e)
     {
         Debug.Log("ronda iniciada");
         stageEnded = false;
+        UpdateButtonVisibility(); 
     }
 
     private void GCM_SetEnvidoButton(object sender, CanICallEnvidoArgs e)
     {
-        if (e.canICallEnvido && !stageEnded)
+        lastCanCallEnvido = e.canICallEnvido; 
+        UpdateButtonVisibility(); 
+    }
+
+
+    private void UpdateButtonVisibility()
+    {
+        if (lastCanCallEnvido && !stageEnded)
         {
             Show();
             SetHideButtons();
@@ -89,9 +99,7 @@ public class EnvidoButtonsUI : MonoBehaviour
             Hide();
             SetHideButtons();
         }
-        ;
     }
-
     private void GameManager_OnSentEnvidoValue(object sender, OnSentEnvidoArgs e)
     {
         points.text = e.value.ToString();
