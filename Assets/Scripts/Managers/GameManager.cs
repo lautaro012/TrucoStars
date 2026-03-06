@@ -13,7 +13,7 @@ public class OnSentEnvidoArgs : EventArgs
 {
     public int value;
 }
-public class OnHandsWonArgs : EventArgs
+public class OnPointsGainedArgs : EventArgs
 {
     public int points;
 }
@@ -29,7 +29,7 @@ public class OnTeamEnvidoCall : EventArgs {
     public int team;
     public EnvidoStage envidoStage;
 }
-public class OnGameFinishedArgs : EventArgs {
+public class OnTeamWinnerArgs : EventArgs {
     public int winnerTeam;
 }
 public class CardClickedEventArgs : EventArgs {
@@ -134,9 +134,11 @@ public class GameManager : NetworkBehaviour
     public event EventHandler<OnTeamTrucoCall> OnSomeoneCalledTruco;
     public event EventHandler<OnWaitingConfirmationArgs> OnWaitingTrucoConfirmation;
     public event EventHandler<OnWaitingConfirmationArgs> OnWaitingEnvidoConfirmation;
-    public event EventHandler<OnHandsWonArgs> OnTeam1PointsChanged;
-    public event EventHandler<OnHandsWonArgs> OnTeam2PointsChanged;
-    public event EventHandler<OnGameFinishedArgs> OnGameFinished;
+    public event EventHandler<OnPointsGainedArgs> OnTeam1PointsChanged;
+    public event EventHandler<OnPointsGainedArgs> OnTeam2PointsChanged;
+    public event EventHandler<OnTeamWinnerArgs> OnRoundWined;
+
+    public event EventHandler<OnTeamWinnerArgs> OnGameFinished;
 
 
     //? --- NETWORK VARIABLES --- */
@@ -152,8 +154,6 @@ public class GameManager : NetworkBehaviour
     private int playersReady = 0;
 
     //? variables para las manos
-    private int HandsWonByTeam1;
-    private int HandsWonByTeam2;
     private int firstToPlay = 0; // El índice del jugador que reparte/empieza
     private Hand currentHand;
     private int handCount = 0;
@@ -536,11 +536,11 @@ public class GameManager : NetworkBehaviour
 
     private void Team2Points_OnValueChanged(int previousValue, int newValue)
     {
-        OnTeam2PointsChanged?.Invoke(this, new OnHandsWonArgs { points = newValue });
+        OnTeam2PointsChanged?.Invoke(this, new OnPointsGainedArgs { points = newValue });
     }
     private void Team1Points_OnValueChanged(int previousValue, int newValue)
     {
-        OnTeam1PointsChanged?.Invoke(this, new OnHandsWonArgs { points = newValue });
+        OnTeam1PointsChanged?.Invoke(this, new OnPointsGainedArgs { points = newValue });
     }
     private void RoundState_OnValueChanged(RoundState previousValue, RoundState newValue)
     {
@@ -647,7 +647,8 @@ public class GameManager : NetworkBehaviour
 
         int winnerTeam = (winnerSeat == -1) ? -1 : Seats[winnerSeat].team;
 
-        currentHand.RegisterRoundWinner(winnerSeat, winnerTeam); //? SE GUARDA GANADORES DE LA RONDA ACTUAL Y CIERRA LA MANO
+        currentHand.RegisterRoundWinner(winnerSeat, winnerTeam); //? SE GUARDAN Y ANUNCIAN GANADORES DE LA RONDA ACTUAL Y CIERRA LA MANO
+        AnnounceRoundWinnerClientRpc(winnerTeam);
 
         //? CHEQUEO: LA MANO NO CERRO ? ANUNCIO NUEVA RONDA : ANUNCIO GANADOR
         if (!currentHand.IsHandClosed())
@@ -664,6 +665,11 @@ public class GameManager : NetworkBehaviour
         RestartDefaultValues();
     }
 
+    [Rpc(SendTo.Everyone)]
+    private void AnnounceRoundWinnerClientRpc(int winnerTeam)
+    {
+        OnRoundWined?.Invoke(this,new OnTeamWinnerArgs{ winnerTeam = winnerTeam });
+    }
 
     //? Le avisa a los clientes que muevan la carta "cardIndex" del "clientSeat" y les avisa que carta era
     [Rpc(SendTo.Everyone)]
@@ -984,7 +990,7 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void FinishGameClientRpc(int win)
     {
-        OnGameFinished?.Invoke(this, new OnGameFinishedArgs
+        OnGameFinished?.Invoke(this, new OnTeamWinnerArgs
         {
             winnerTeam = win
         });

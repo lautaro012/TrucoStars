@@ -13,7 +13,7 @@ public class GameOverUI : MonoBehaviour
         Hide();
     }
 
-    private void GameManager_OnGameFinished(object sender, OnGameFinishedArgs e)
+    private void GameManager_OnGameFinished(object sender, OnTeamWinnerArgs e)
     {
         finalMessage.text = "Ha ganado el equipo " + e.winnerTeam + " !";
         Show();
