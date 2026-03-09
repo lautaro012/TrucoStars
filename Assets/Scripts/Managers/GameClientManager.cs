@@ -20,6 +20,7 @@ public class IsMyTurnArgs : EventArgs
 {
     public bool IsMyTurn;
     public int value;
+    public int TeamTurn;
 }
 public class CanICallEnvidoArgs : EventArgs
 {
@@ -147,7 +148,7 @@ public class GameClientManager : MonoBehaviour
         //* Setear de quien es el turno
         bool isLocalPlayerturn = NetworkManager.Singleton.LocalClientId == e.clientId;
         bool canCallEnvido = isLocalPlayerturn && e.round == 0 && e.ImLastTurn;
-        SetCurrentTurn?.Invoke(this, new IsMyTurnArgs { IsMyTurn = isLocalPlayerturn });
+        SetCurrentTurn?.Invoke(this, new IsMyTurnArgs { IsMyTurn = isLocalPlayerturn, TeamTurn = e.team });
         SetEnvidoButton?.Invoke(this, new CanICallEnvidoArgs { canICallEnvido = canCallEnvido });
     }
 
