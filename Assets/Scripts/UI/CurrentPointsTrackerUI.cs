@@ -3,6 +3,7 @@ using TMPro;
 using Unity.Services.Lobbies;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CurrentPointsTrackerUI : MonoBehaviour
 {
@@ -16,8 +17,8 @@ public class CurrentPointsTrackerUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI Team1Name;
     [SerializeField] private TextMeshProUGUI Team2Name;
     [SerializeField] private TextMeshProUGUI RoundNumber;
-    [SerializeField] private GameObject[] P1_Light_Tracker = new GameObject[2];
-    [SerializeField] private GameObject[] P2_Light_Tracker = new GameObject[2];
+    [SerializeField] private Image[] P1_Light_Tracker = new Image[2];
+    [SerializeField] private Image[] P2_Light_Tracker = new Image[2];
     private int roundsWonByTeam1 = 0;
     private int roundsWonByTeam2 = 0;
     private int LocalPlayerTeam;
@@ -45,11 +46,11 @@ public class CurrentPointsTrackerUI : MonoBehaviour
     {
         if(e.winnerTeam == 1)
         {
-            P1_Light_Tracker[roundsWonByTeam1].SetActive(true);
+            P1_Light_Tracker[roundsWonByTeam1].color = Color.green;
             roundsWonByTeam1++;    
         }else
         {
-            P2_Light_Tracker[roundsWonByTeam2].SetActive(true);    
+            P2_Light_Tracker[roundsWonByTeam2].color =  Color.green;;    
             roundsWonByTeam2++;
         }
     }
@@ -124,8 +125,8 @@ public class CurrentPointsTrackerUI : MonoBehaviour
     private void RestartLightPoints()
     {
         for (int i = 0; i < P1_Light_Tracker.Length; i++) {
-            P1_Light_Tracker[i].SetActive(false);
-            P2_Light_Tracker[i].SetActive(false);
+            P1_Light_Tracker[i].color = Color.red;
+            P2_Light_Tracker[i].color = Color.red;
         }       
         roundsWonByTeam1 = 0;
         roundsWonByTeam2 = 0;

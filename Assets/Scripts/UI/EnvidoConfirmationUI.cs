@@ -40,7 +40,7 @@ public class EnvidoConfirmationUI : MonoBehaviour
     }
     private void Start()
     {
-        GameClientManager.Instance.EnvidoEvent += GCM_EnvidoEvent;
+       // GameClientManager.Instance.EnvidoEvent += GCM_EnvidoEvent;
         GameManager.Instance.OnWaitingEnvidoConfirmation += GM_OnWaitingEnvidoConfirmation;
         Hide();
     }

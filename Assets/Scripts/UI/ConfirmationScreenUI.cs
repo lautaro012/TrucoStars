@@ -29,7 +29,7 @@ public class ConfirmationScreenUI : MonoBehaviour
         });
     }
     private void Start() {
-        GameClientManager.Instance.TrucoEvent += GCM_TrucoEvent;
+    //    GameClientManager.Instance.TrucoEvent += GCM_TrucoEvent;
         GameManager.Instance.OnRoundFinished += GameManager_OnRoundFinished;
         GameManager.Instance.OnWaitingTrucoConfirmation += GameManager_OnWaitingTrucoConfirmation;
         Hide();
