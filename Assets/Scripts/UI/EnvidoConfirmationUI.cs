@@ -4,6 +4,8 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
+
+//! DEPRECATED
 public class EnvidoConfirmationUI : MonoBehaviour
 {
     [SerializeField] private Button RaiseEnvidoButton;
