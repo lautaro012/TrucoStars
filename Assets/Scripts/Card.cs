@@ -75,7 +75,7 @@ public class Card : MonoBehaviour
         Vector3 endPos = target.position;
         // Le damos un pequeño desvío en Z para que no parezca perfecta de robot
         float randomZ = UnityEngine.Random.Range(-5f, 5f);
-        Quaternion endRot = Quaternion.Euler(90f, 0f, randomZ);
+        Quaternion endRot = Quaternion.Euler(90f, -90f, randomZ);
 
         float timeElapsed = 0f;
         float archHeight = 0.2f; // Ajustá esto para que vuele más o menos alto

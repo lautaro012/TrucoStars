@@ -4,6 +4,8 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
+
+//! DEPRECATED
 public class EnvidoConfirmationUI : MonoBehaviour
 {
     [SerializeField] private Button RaiseEnvidoButton;
@@ -40,7 +42,7 @@ public class EnvidoConfirmationUI : MonoBehaviour
     }
     private void Start()
     {
-        GameClientManager.Instance.EnvidoEvent += GCM_EnvidoEvent;
+       // GameClientManager.Instance.EnvidoEvent += GCM_EnvidoEvent;
         GameManager.Instance.OnWaitingEnvidoConfirmation += GM_OnWaitingEnvidoConfirmation;
         Hide();
     }

@@ -20,6 +20,7 @@ public class IsMyTurnArgs : EventArgs
 {
     public bool IsMyTurn;
     public int value;
+    public int TeamTurn;
 }
 public class CanICallEnvidoArgs : EventArgs
 {
@@ -27,6 +28,10 @@ public class CanICallEnvidoArgs : EventArgs
 }
 public class GameClientManager : MonoBehaviour
 {
+
+    [Header("UI Panels Dinámicos")]
+    [SerializeField] private DynamicResponsePanelUI dynamicPanel;
+    [SerializeField] private GameObject normalActionsPanel;
     public static GameClientManager Instance { get; private set; }
     private readonly Dictionary<ulong, int> _clientToSeat = new();
     private readonly Dictionary<int, int> _seatToTeam = new();
@@ -99,10 +104,10 @@ public class GameClientManager : MonoBehaviour
     //? Eventos de Envido
     public event EventHandler<CanICallEnvidoArgs> SetEnvidoButton;
     public event EventHandler HideEnvidoButtons;
-    public event EventHandler<EnvidoEventArgs> EnvidoEvent;
+    //public event EventHandler<EnvidoEventArgs> EnvidoEvent;
     public event EventHandler EnvidoStageEnded;
     //? Eventos de Truco
-    public event EventHandler<TrucoEventArgs> TrucoEvent;
+    //public event EventHandler<TrucoEventArgs> TrucoEvent;
     public event EventHandler TrucoStageEnded;
     public event EventHandler HideTrucoButtons;
     public event EventHandler<OnRoundFinishedArgs> ShowEndRoundText;
@@ -147,11 +152,11 @@ public class GameClientManager : MonoBehaviour
         //* Setear de quien es el turno
         bool isLocalPlayerturn = NetworkManager.Singleton.LocalClientId == e.clientId;
         bool canCallEnvido = isLocalPlayerturn && e.round == 0 && e.ImLastTurn;
-        SetCurrentTurn?.Invoke(this, new IsMyTurnArgs { IsMyTurn = isLocalPlayerturn });
+        SetCurrentTurn?.Invoke(this, new IsMyTurnArgs { IsMyTurn = isLocalPlayerturn, TeamTurn = e.team });
         SetEnvidoButton?.Invoke(this, new CanICallEnvidoArgs { canICallEnvido = canCallEnvido });
     }
 
-    private void GM_OnSomeoneCalledTruco(object sender, OnTeamTrucoCall e)
+   /* private void GM_OnSomeoneCalledTruco(object sender, OnTeamTrucoCall e)
     {
         string MT = "";
         string UT = "";
@@ -178,8 +183,70 @@ public class GameClientManager : MonoBehaviour
             upgradeText = UT,
             hideUpgrade = HUPG
         });
+    }*/
+    private void GM_OnSomeoneCalledTruco(object sender, OnTeamTrucoCall e)
+    {
+        // 1. Apagamos tus botones de jugar normales
+        if (normalActionsPanel != null) normalActionsPanel.SetActive(false);
+
+        // 2. Preparamos los textos según la etapa
+        string title = e.trucostage == TrucoStage.Truco ? "¡TE CANTARON TRUCO!" : 
+                       e.trucostage == TrucoStage.Retruco ? "¡QUIERO RE-TRUCO!" : "¡QUIERO VALE 4!";
+                       
+        string raiseText = e.trucostage == TrucoStage.Truco ? "Quiero Re-Truco" : "Quiero Vale 4";
+        bool canRaise = e.trucostage != TrucoStage.Vale4; // Si ya es Vale 4, no se puede subir más
+
+        // 3. Armamos la lista de botones base (Quiero y No Quiero)
+        var options = new List<ButtonOption>
+        {
+            new() { buttonText = "Quiero", buttonAction = () => GameManager.Instance.TrucoConfirmation(true), buttonColor = Color.green },
+            new() { buttonText = "No Quiero / Mazo", buttonAction = () => GameManager.Instance.Surrender(), buttonColor = Color.red }
+        };
+
+        // 4. Si se puede subir la apuesta, lo insertamos PRIMERO en la lista
+        if (canRaise)
+        {
+            options.Insert(0, new ButtonOption { 
+                buttonText = raiseText, 
+                buttonColor = Color.blue,
+                buttonAction = () => { GameManager.Instance.TrucoConfirmation(true); GameManager.Instance.Truco(); } 
+            });
+        }
+        dynamicPanel.ShowOptions(title, options.ToArray());
     }
 
+    private void GM_OnSomeoneCalledEnvido(object sender, OnTeamEnvidoCall e)
+    {
+        if (normalActionsPanel != null) normalActionsPanel.SetActive(false);
+
+        string title = "EL EQUIPO " + e.team + " CANTÓ " + e.envidoStage;
+        
+        var options = new List<ButtonOption>();
+
+        // Agregamos las opciones de subir apuesta según corresponda
+        if (e.envidoStage == EnvidoStage.Envido)
+        {
+            options.Add(new ButtonOption { buttonText = "Envido", buttonColor = Color.blue, buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.Envido) });
+            options.Add(new ButtonOption { buttonText = "Real Envido", buttonColor = Color.aliceBlue, buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.RealEnvido) });
+        }
+        else if (e.envidoStage == EnvidoStage.EnvidoEnvido)
+        {
+            options.Add(new ButtonOption { buttonText = "Real Envido", buttonColor = Color.aquamarine ,buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.RealEnvido) });
+        }
+
+        // El Falta Envido siempre está disponible a menos que ya lo hayan cantado
+        if (e.envidoStage != EnvidoStage.FaltaEnvido)
+        {
+            options.Add(new ButtonOption { buttonText = "Falta Envido", buttonColor = Color.coral ,buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.FaltaEnvido) });
+        }
+
+        // Agregamos los obligatorios al final
+        options.Add(new ButtonOption { buttonText = "Quiero", buttonColor = Color.green, buttonAction = () => GameManager.Instance.EnvidoConfirmation(true) });
+        options.Add(new ButtonOption { buttonText = "No Quiero", buttonColor = Color.red, buttonAction = () => GameManager.Instance.EnvidoConfirmation(false) });
+
+        dynamicPanel.ShowOptions(title, options.ToArray());
+    }
+    /*
     private void GM_OnSomeoneCalledEnvido(object sender, OnTeamEnvidoCall e)
     {
         string GT = "EL EQUIPO " + e.team + " CANTO " + e.envidoStage;
@@ -197,6 +264,6 @@ public class GameClientManager : MonoBehaviour
             upgradeText = UT,
             hideUpgrade = hideUpgradeButton
         });
-    }
+    }*/
 
 }
