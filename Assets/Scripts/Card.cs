@@ -7,6 +7,9 @@ using UnityEngine;
 public class Card : MonoBehaviour
 {
     [SerializeField] private GameObject cardFront;
+    [SerializeField] private GameObject hover;
+
+    private float Yoffset = 0.01f;
     private CardSO cardSO;
     private int cardParentIndex;
     private MeshRenderer frontRenderer;
@@ -14,6 +17,35 @@ public class Card : MonoBehaviour
     void Awake() {
         if (cardFront != null)
             frontRenderer = cardFront.GetComponent<MeshRenderer>();
+    }
+
+    public bool isInteractable = false; 
+
+    void OnMouseEnter()
+    {
+        // Si no es interactable (ej: es del rival), ignoramos el mouse
+        if (!isInteractable) return; 
+
+        hover.SetActive(true);
+        // Usamos localPosition directo, nada de Translate
+        transform.localPosition = new Vector3(
+            transform.localPosition.x, 
+            transform.localPosition.y + Yoffset, 
+            transform.localPosition.z
+        );
+    }
+
+    void OnMouseExit()
+    {
+        if (!isInteractable) return;
+
+        hover.SetActive(false);
+        // Revertimos la posición matemáticamente
+        transform.localPosition = new Vector3(
+            transform.localPosition.x, 
+            transform.localPosition.y - Yoffset, 
+            transform.localPosition.z
+        );
     }
 
     public void SetCardParentIndex(int index) {
@@ -63,6 +95,8 @@ public class Card : MonoBehaviour
     /// <param name="destiny"></param>
     /// <param name="Time"></param>
     public void SmoothMoveCardTo(Transform destiny, float time){
+        isInteractable = false;
+        hover.SetActive(false);
         StartCoroutine(MoveRoutine(destiny,time));
     }
 

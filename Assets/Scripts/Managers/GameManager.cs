@@ -5,6 +5,12 @@ using UnityEngine;
 using System.Linq;
 using Unity.VisualScripting;
 
+public class OnPlayerCalledArgs : EventArgs
+{
+    public int seatIndex;
+    public string callText;
+}
+
 public class OnWaitingConfirmationArgs : EventArgs
 {
     public bool isStageEnded;
@@ -19,6 +25,20 @@ public class OnPointsGainedArgs : EventArgs
 }
 public class OnRoundFinishedArgs : EventArgs {
     public bool shuffleDeck;   
+    public int team1PointsGained; 
+    public int team2PointsGained; 
+    public int totalPointsInPlay; // La suma de todo lo que se apostó
+}
+public class OnEnvidoWinnerArgs : EventArgs
+{
+    public int winningTeam;
+    public int pointsWon;
+    public int winningScore; 
+}
+public class OnTrucoAcceptedArgs : EventArgs
+{
+    public TrucoStage currentStage; // Para saber si es Truco, Retruco, etc.
+    public int pointsAtStake; // Puntos en juego (2, 3 o 4)
 }
 public class OnTeamTrucoCall : EventArgs
 {
@@ -127,6 +147,8 @@ public class GameManager : NetworkBehaviour
 
 
     //? --- EVENTOS --- //
+    public event EventHandler<OnEnvidoWinnerArgs> OnEnvidoWinnerDecided;
+    public event EventHandler<OnTrucoAcceptedArgs> OnTrucoAccepted;
     public event EventHandler AreAllPlayersConnected;
     public event EventHandler OnRoundStarted;
     public event EventHandler<OnRoundFinishedArgs> OnRoundFinished;
@@ -137,7 +159,7 @@ public class GameManager : NetworkBehaviour
     public event EventHandler<OnPointsGainedArgs> OnTeam1PointsChanged;
     public event EventHandler<OnPointsGainedArgs> OnTeam2PointsChanged;
     public event EventHandler<OnTeamWinnerArgs> OnRoundWined;
-
+    public event EventHandler<OnPlayerCalledArgs> OnPlayerMadeCall;
     public event EventHandler<OnTeamWinnerArgs> OnGameFinished;
 
 
@@ -477,7 +499,7 @@ public class GameManager : NetworkBehaviour
     /// Ejecuta la animación y LUEGO enciende las manos
     /// </summary>
     /// <param name="dealerSeat"></param>
-[Rpc(SendTo.Everyone)]
+    [Rpc(SendTo.Everyone)]
     private void DealAnimationClientRpc(int dealerSeat)
     {
         PlaySlotView dealerSlot = playSlots_Seats[dealerSeat];
@@ -511,7 +533,6 @@ public class GameManager : NetworkBehaviour
         {
             int dealerSeat = firstToPlay;
             Debug.Log("first to play: " + firstToPlay);
-            CallRoundFinishedEventClientRpc(dealerSeat);
         }
         else
         {
@@ -520,14 +541,6 @@ public class GameManager : NetworkBehaviour
     }
 
 
-    //? lE AVISA A CADA CLIENTE QUE LA RONDA TERMINO
-    [Rpc(SendTo.Everyone)]
-    private void CallRoundFinishedEventClientRpc(int dealerSeat)
-    {
-        int mySeat = GameClientManager.Instance.GetLocalSeat();
-        bool shuffleDeck = (mySeat == dealerSeat);
-        OnRoundFinished?.Invoke(this, new OnRoundFinishedArgs { shuffleDeck = shuffleDeck });
-    }
     [Rpc(SendTo.Everyone)]
     private void RoundStartedCallClientRpc()
     {
@@ -706,6 +719,18 @@ public class GameManager : NetworkBehaviour
     }
 
     /// <summary>
+    /// Muestra un globo de texto en un jugador especifico
+    /// </summary>
+    /// <param name="seatIndex"></param>
+    /// <param name="callText"></param>
+    [Rpc(SendTo.Everyone)]
+    private void AnnounceCallToAllClientRpc(int seatIndex, string callText)
+    {
+        // Esto lo va a escuchar el SeatController de CADA jugador
+        OnPlayerMadeCall?.Invoke(this, new OnPlayerCalledArgs { seatIndex = seatIndex, callText = callText });
+    }
+
+    /// <summary>
     /// SE LLAMA CUANDO El EQUIPO CONTRARIO ACEPTA O RECHAZA EL TRUCO.
     /// </summary>
     /// <param name="Isaccepted"></param>
@@ -713,30 +738,33 @@ public class GameManager : NetworkBehaviour
     {
         TrucoConfirmationServerRpc(Isaccepted);
     }
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+   [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void TrucoConfirmationServerRpc(bool accepted, RpcParams rpc = default)
     {
-        if (waitingTrucoConfirmation == false)
-        {
-            Debug.Log("[ERROR] No puedes confirmar el Truco en este momento.");
-            return;
-        }
+        if (waitingTrucoConfirmation == false) return;
+        
         if (accepted)
         {
-            // Aceptaron el Truco
             scoringLogic.TrucoAccepted();
-            Debug.Log($"¡Truco aceptado! Ahora se juega por {scoringLogic.GetPointsInPlay()} puntos.");
+            AnnounceTrucoAcceptedClientRpc(scoringLogic.trucoStage, scoringLogic.GetPointsInPlay());
         }
         else
         {
-            // Rechazaron el Truco
             ulong surrenderSenderId = rpc.Receive.SenderClientId;
             DeclareTeamWinnerBySurrender(surrenderSenderId);
         }
-        // Resetear valores
+        
+        int senderSeat = GetSeatIndexFromClientId(rpc.Receive.SenderClientId);
+        AnnounceCallToAllClientRpc(senderSeat, "¡QUIERO!");
+        
         waitingTrucoConfirmation = false;
-        //? AVISAR A LOS CLIENTES QUE SE ACEPTO O RECHAZO EL TRUCO
         TrucoConfirmationClientRpc();
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void AnnounceTrucoAcceptedClientRpc(TrucoStage stage, int points)
+    {
+        OnTrucoAccepted?.Invoke(this, new OnTrucoAcceptedArgs { currentStage = stage, pointsAtStake = points });
     }
 
     //? CLIENTRP QUE LE AVISA A LOS JUGADORES QUE LA CONFIRMACION FINALIZO PARA SEGUIR JUGANDO
@@ -784,6 +812,11 @@ public class GameManager : NetworkBehaviour
                 targetClients.Add(kvp.Value.clientId);
             }
         }
+        
+        string textCall = scoringLogic.trucoStage == TrucoStage.Truco ? "¡TRUCO!" :
+                  scoringLogic.trucoStage == TrucoStage.Retruco ? "¡QUIERO RE-TRUCO!" : "¡QUIERO VALE 4!";
+        AnnounceCallToAllClientRpc(senderSeat, textCall);
+        
         SendTrucoToOpponentClientRpc(callerTeam, scoringLogic.trucoStage, GetRpcTargetParams(targetClients.ToArray()));
         StartTrucoConfirmationClientRpc();
     }
@@ -849,6 +882,12 @@ public class GameManager : NetworkBehaviour
                 targetClients.Add(kvp.Value.clientId);
             }
         }
+        
+        string textCall = call == EnvidoStage.EnvidoEnvido ? "¡ENVIDO ENVIDO!" :
+                  call == EnvidoStage.RealEnvido ? "¡REAL ENVIDO!" :
+                  call == EnvidoStage.FaltaEnvido ? "¡FALTA ENVIDO!" : "¡ENVIDO!";
+        AnnounceCallToAllClientRpc(senderSeat, textCall);
+
         SendEnvidoToOpponentClientRpc(callerTeam, scoringLogic.envidoStage, GetRpcTargetParams(targetClients.ToArray()));
         StartEnvidoStageClientRpc();
     }
@@ -898,11 +937,17 @@ public class GameManager : NetworkBehaviour
         ulong sender = rpc.Receive.SenderClientId;
         int senderSeat = GetSeatIndexFromClientId(sender);
         int senderTeam = Seats[senderSeat].team;
+        
+        int winnerTeam;
+        int pointsWon;
+        int winningScore = 0;
+
         if (accepted)
         {
             int winnerSeat = -1;
             int maxEnvidoValue = -1;
             scoringLogic.AddEnvidoPointsByStage();
+            
             foreach (var pd in envidoValue_Seats)
             {
                 if (pd.Value > maxEnvidoValue)
@@ -911,15 +956,21 @@ public class GameManager : NetworkBehaviour
                     winnerSeat = pd.Key;
                 }
             }
-            AddEnvidoPointsToWinner(Seats[winnerSeat].team);
+            winnerTeam = Seats[winnerSeat].team;
+            winningScore = maxEnvidoValue; 
+            pointsWon = AddEnvidoPointsToWinner(winnerTeam);
         }
         else
         {
-            if (senderTeam == 1) AddEnvidoPointsToWinner(2); //? Gana el equipo contrario.
-            else AddEnvidoPointsToWinner(1);
+            winnerTeam = (senderTeam == 1) ? 2 : 1;
+            pointsWon = AddEnvidoPointsToWinner(winnerTeam);
         }
+
+        AnnounceCallToAllClientRpc(senderSeat, "¡QUIERO!");
+        
         waitingEnvidoConfirmation = false;
         EnvidoConfirmationClientRpc();
+        AnnounceEnvidoWinnerClientRpc(winnerTeam, pointsWon, winningScore);
     }
 
 
@@ -934,59 +985,74 @@ public class GameManager : NetworkBehaviour
     }
 
     //? AGREGA LOS PUNTOS DE ENVIDO AL GANADOR
-    private void AddEnvidoPointsToWinner(int winnerTeam)
+    private int AddEnvidoPointsToWinner(int winnerTeam)
     {
+        int pointsToAdd = 0;
         if (scoringLogic.envidoStage == EnvidoStage.FaltaEnvido)
         {
-            if (winnerTeam == 1) {
-                int faltaEnvidoValue = 15-(Team2Points.Value % 15);
-                Team1Points.Value += faltaEnvidoValue;
-            }
-            else {
-                int faltaEnvidoValue = 15-(Team1Points.Value % 15); 
-                Team2Points.Value += faltaEnvidoValue;
-            }
-            Debug.Log("-     FALTA ENVIDO       -");
-            Debug.Log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+            pointsToAdd = (winnerTeam == 1) ? 15 - (Team2Points.Value % 15) : 15 - (Team1Points.Value % 15);
         }
         else
         {
-            if (winnerTeam == 1) Team1Points.Value += scoringLogic.GetEnvidoPointsInPlay();
-            else Team2Points.Value += scoringLogic.GetEnvidoPointsInPlay();
+            pointsToAdd = scoringLogic.GetEnvidoPointsInPlay();
         }
-        Debug.Log("SE AGREGAN " + scoringLogic.GetEnvidoPointsInPlay() + " por " + scoringLogic.envidoStage + " AL EQUIPO " + winnerTeam);
+
+        if (winnerTeam == 1) Team1Points.Value += pointsToAdd;
+        else Team2Points.Value += pointsToAdd;
+
+        return pointsToAdd;
+    }
+    [Rpc(SendTo.Everyone)]
+    private void AnnounceEnvidoWinnerClientRpc(int winnerTeam, int pointsWon, int winningScore)
+    {
+        OnEnvidoWinnerDecided?.Invoke(this, new OnEnvidoWinnerArgs {
+            winningTeam = winnerTeam,
+            pointsWon = pointsWon,
+            winningScore = winningScore
+        });
     }
 
 
     //? --- RESOLUCION DE MANO --- */
     private void CalculatePoints(int winnerTeam)
     {
-        if (!currentHand.IsHandClosed())
+        if (!currentHand.IsHandClosed()) return;
+
+        int pointsGainedT1 = 0;
+        int pointsGainedT2 = 0;
+        int pointsInPlay = scoringLogic.GetPointsInPlay();
+
+        if (winnerTeam != -1)
         {
-            Debug.LogError("NO SE PUEDE CALCULAR PUNTOS SI LA MANO NO ESTA CERRADA");
-            return;
+            if (winnerTeam == 1) {
+                pointsGainedT1 = pointsInPlay;
+                Team1Points.Value += pointsInPlay;
+            } else {
+                pointsGainedT2 = pointsInPlay;
+                Team2Points.Value += pointsInPlay;
+            }
         }
-        if (winnerTeam == -1)
-        {
-            //? TERMINO LA MANO Y EMPATARON LAS 3 RONDAS, NO SE SUMA PUNTOS.
-            Debug.Log("--- EMPATE TOTAL ---");
-        }
-        else
-        {
-            if (winnerTeam == 1) Team1Points.Value += scoringLogic.GetPointsInPlay();
-            else Team2Points.Value += scoringLogic.GetPointsInPlay();
-        }
-        if (GetTeam1TotalPoints() >= pointsToWin)
-        {
-            FinishGameClientRpc(1);
-            return;
-        }
-        if (GetTeam2TotalPoints() >= pointsToWin)
-        {
-            FinishGameClientRpc(2);
-            return;
-        }
+
+        CallRoundFinishedEventClientRpc(firstToPlay, pointsGainedT1, pointsGainedT2, pointsInPlay);
+
+        if (GetTeam1TotalPoints() >= pointsToWin) FinishGameClientRpc(1);
+        else if (GetTeam2TotalPoints() >= pointsToWin) FinishGameClientRpc(2);
     }
+    
+
+    [Rpc(SendTo.Everyone)]
+    private void CallRoundFinishedEventClientRpc(int dealerSeat, int t1Gained, int t2Gained, int totalInPlay)
+    {
+        int mySeat = GameClientManager.Instance.GetLocalSeat();
+        bool shuffleDeck = mySeat == dealerSeat;
+        OnRoundFinished?.Invoke(this, new OnRoundFinishedArgs { 
+            shuffleDeck = shuffleDeck,
+            team1PointsGained = t1Gained,
+            team2PointsGained = t2Gained,
+            totalPointsInPlay = totalInPlay
+        });
+    }
+
     [Rpc(SendTo.Everyone)]
     private void FinishGameClientRpc(int win)
     {
@@ -1010,6 +1076,10 @@ public class GameManager : NetworkBehaviour
     {
         Debug.Log($"El equipo rival Se rindio. El equipo gana {scoringLogic.GetPointsInPlay()} puntos.");
         ulong surrenderSenderId = rpc.Receive.SenderClientId;
+        
+        int surrenderSeat = GetSeatIndexFromClientId(rpc.Receive.SenderClientId);
+        AnnounceCallToAllClientRpc(surrenderSeat, "Me voy al mazo...");
+        
         DeclareTeamWinnerBySurrender(surrenderSenderId);
     }
     private void DeclareTeamWinnerBySurrender(ulong surrenderSenderId)

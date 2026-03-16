@@ -1,4 +1,6 @@
+using System;
 using NUnit.Framework;
+using Unity.Netcode;
 using UnityEngine;
 
 public class SeatController : MonoBehaviour
@@ -9,6 +11,8 @@ public class SeatController : MonoBehaviour
     private ulong clientId;
     private int team;
     private Unity.Collections.FixedString128Bytes playerId;
+    [Header("UI 3D")]
+    [SerializeField] private TextGlobeUI textGlobeUI;
 
     [Header("Cartas")]
     [SerializeField] private Transform[] handHolderPoints;
@@ -23,17 +27,58 @@ public class SeatController : MonoBehaviour
     public float minPitch = -60f;
     public float maxPitch = 30f;
     public float maxYaw = 60f;
-    private float xRotation = -20f; // Empieza mirando un poco hacia abajo
+    private float xRotation = 0f; // Empieza mirando un poco hacia abajo
     private float yRotation = 0f;
     [Header("Sincronización de Red")]
     private Quaternion targetHeadRotation = Quaternion.identity;
     private float syncTimer = 0f;
     private float syncRate = 0.1f; // Manda datos 10 veces por segundo
+    public static Transform LocalPlayerCamera { get; private set; } 
 
+    private void SetupLocalCamera()
+    {
+        Camera mainCam = Camera.main;
+        if (mainCam != null && cameraMount != null)
+        { 
+            mainCam.transform.SetParent(cameraMount);
+            mainCam.transform.localPosition = Vector3.zero;
+            mainCam.transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
+
+            if (myModelHead != null) myModelHead.SetActive(false);
+
+            // 3. ¡LA MAGIA! Guardamos esta cámara como LA cámara local definitiva
+            LocalPlayerCamera = mainCam.transform; 
+        }
+        else
+        {
+            Debug.LogWarning("Falta asignar la MainCamera o el CameraMount en el SeatController.");
+        }
+    }
     private void Awake()
     {
         HandCards = new Card[3];
         cardsIndexes = new int[3];
+    }
+
+    void Start()
+    {
+        GameManager.Instance.OnPlayerMadeCall += GameManager_OnPlayerMadeCall;
+    }
+
+    private void GameManager_OnPlayerMadeCall(object sender, OnPlayerCalledArgs e)
+    {
+        if (e.seatIndex == this.seatIndex && textGlobeUI != null)
+        {
+            textGlobeUI.ShowMessage(e.callText);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnPlayerMadeCall -= GameManager_OnPlayerMadeCall;
+        }
     }
 
     private void Update()
@@ -86,25 +131,6 @@ public class SeatController : MonoBehaviour
         CreateHandView();
     }
 
-    private void SetupLocalCamera()
-    {
-        Camera mainCam = Camera.main;
-        if (mainCam != null && cameraMount != null)
-        { 
-            // Robamos la cámara y la pegamos en la cabeza
-            mainCam.transform.SetParent(cameraMount);
-            mainCam.transform.localPosition = Vector3.zero;
-            // Aplicamos la rotación inicial para que mire a la mesa
-            mainCam.transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
-
-            // Ocultamos nuestra propia cabeza para no ver el interior del modelo
-            if (myModelHead != null) myModelHead.SetActive(false);
-        }
-        else
-        {
-            Debug.LogWarning("Falta asignar la MainCamera o el CameraMount en el SeatController.");
-        }
-    }
 
     private void HandleCameraMovement()
     {
@@ -160,6 +186,10 @@ public class SeatController : MonoBehaviour
                 cardTransform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                 Card newCard = cardObject.GetComponent<Card>();
                 newCard.SetCardParentIndex(i);
+                if (isLocal) 
+                {
+                    newCard.isInteractable = true; 
+                }
                 HandCards[i] = newCard;
                 newCard.gameObject.SetActive(false);
             }
