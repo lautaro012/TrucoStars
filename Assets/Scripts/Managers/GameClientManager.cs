@@ -93,11 +93,8 @@ public class GameClientManager : MonoBehaviour
         GameManager.Instance.OnWaitingTrucoConfirmation += GM_OnWaitingTrucoConfirmation;
         GameManager.Instance.OnEnvidoWinnerDecided += GameManager_OnEnvidoWinnerDecided;
         GameManager.Instance.OnTrucoAccepted += GameManager_OnTrucoAccepted;
+        GameManager.Instance.OnPromptEnvidoScore += GameManager_OnPromptEnvidoScore;
     }
-
-
-
-
 
     //* EVENTOS PARA LA UI */
     public event EventHandler HideLoadingScreen;
@@ -118,6 +115,50 @@ public class GameClientManager : MonoBehaviour
     /*
         METODOS 
     */
+    private void GameManager_OnPromptEnvidoScore(object sender, OnPromptEnvidoScoreArgs e)
+    {
+        if (normalActionsPanel != null) normalActionsPanel.SetActive(false);
+
+        var options = new List<ButtonOption>();
+        string title = "TUS TANTOS";
+
+        if (!e.isAnswering)
+        {
+            // 1. SOY EL PRIMERO EN HABLAR (El Mano)
+            title = "CANTÁ TUS TANTOS";
+            options.Add(new ButtonOption { 
+                buttonText = $"Tengo {e.myEnvidoScore}", 
+                buttonColor = Color.blue, 
+                // Llamaremos a una nueva función en el ServerRpc
+                buttonAction = () => GameManager.Instance.AnnounceMyEnvidoScore(e.myEnvidoScore) 
+            });
+        }
+        else
+        {
+            // 2. ESTOY RESPONDIENDO AL RIVAL
+            title = $"EL RIVAL TIENE {e.pointsToBeat}";
+
+            // Lógica de Truco: Si mis puntos son mayores, muestro la opción de matarlo
+            // (La lógica del empate >= la podemos afinar después dependiendo de quién es mano)
+            if (e.myEnvidoScore >= e.pointsToBeat) 
+            {
+                options.Add(new ButtonOption { 
+                    buttonText = $"{e.myEnvidoScore} son mejores", 
+                    buttonColor = Color.green, 
+                    buttonAction = () => GameManager.Instance.AnnounceMyEnvidoScore(e.myEnvidoScore) 
+                });
+            }
+
+            // La opción de rendirse siempre está disponible
+            options.Add(new ButtonOption { 
+                buttonText = "Son buenas", 
+                buttonColor = Color.red, 
+                buttonAction = () => GameManager.Instance.FoldEnvidoScore() 
+            });
+        }
+
+        dynamicPanel.ShowOptions(title, options.ToArray());
+    }
     private void GM_OnRoundFinished(object sender, OnRoundFinishedArgs e)
     {
         HideEnvidoButtons?.Invoke(this, EventArgs.Empty);

@@ -55,6 +55,12 @@ public class OnTeamWinnerArgs : EventArgs {
 public class CardClickedEventArgs : EventArgs {
     public int cardIndex;
 }
+public class OnPromptEnvidoScoreArgs : EventArgs
+{
+    public int myEnvidoScore;
+    public int pointsToBeat;
+    public bool isAnswering;
+}
 
 public struct PlayedCard{
     public ulong playerID;
@@ -161,7 +167,7 @@ public class GameManager : NetworkBehaviour
     public event EventHandler<OnTeamWinnerArgs> OnRoundWined;
     public event EventHandler<OnPlayerCalledArgs> OnPlayerMadeCall;
     public event EventHandler<OnTeamWinnerArgs> OnGameFinished;
-
+    public event EventHandler<OnPromptEnvidoScoreArgs> OnPromptEnvidoScore;
 
     //? --- NETWORK VARIABLES --- */
 
@@ -182,6 +188,9 @@ public class GameManager : NetworkBehaviour
     //? VARIABLES DE ENVIDO
     private int TeamThatCalledEnvido = -1;
     private bool waitingEnvidoConfirmation = false;
+    private bool waitingForEnvidoScores = false;
+    private int envidoFirstSpeakerSeat = -1; // El primero en cantar
+    private int currentEnvidoHighScore = -1; // Los puntos que canto el primero
 
     //? VARIABLES DE TRUCO
     private int TeamThatCalledTruco = -1;
@@ -694,7 +703,6 @@ public class GameManager : NetworkBehaviour
         playSlot.PlayThisCard(cardId, origin);
     }
 
-
     private void AnnounceNextRound(int nextLeader)
     {
         TurnManager.Instance.NextRoundLeaderSeatIndex = nextLeader;
@@ -718,6 +726,9 @@ public class GameManager : NetworkBehaviour
         //TODO AGREGAR PUNTOS ROJOS EN EL MARCADOR DE RONDAS 
     }
 
+    
+    // ---- FUNCIONES PARA HABLAR ----
+
     /// <summary>
     /// Muestra un globo de texto en un jugador especifico
     /// </summary>
@@ -729,6 +740,86 @@ public class GameManager : NetworkBehaviour
         // Esto lo va a escuchar el SeatController de CADA jugador
         OnPlayerMadeCall?.Invoke(this, new OnPlayerCalledArgs { seatIndex = seatIndex, callText = callText });
     }
+
+    
+    public void AnnounceMyEnvidoScore(int score)
+    {
+        AnnounceMyEnvidoScoreServerRpc(score);
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void AnnounceMyEnvidoScoreServerRpc(int score, RpcParams rpc = default)
+    {
+        if (!waitingForEnvidoScores) return;
+
+        ulong senderId = rpc.Receive.SenderClientId;
+        int senderSeat = GetSeatIndexFromClientId(senderId);
+        int senderTeam = Seats[senderSeat].team;
+
+        // 1. EL JUGADOR GRITA SUS PUNTOS
+        // Si no es el primero, y sus puntos superan/empatan, dice "X son mejores"
+        string shoutText = (currentEnvidoHighScore != -1) ? $"{score} son mejores!" : $"¡Tengo {score}!";
+        AnnounceCallToAllClientRpc(senderSeat, shoutText);
+
+        // 2. ¿ES EL PRIMERO EN HABLAR?
+        if (currentEnvidoHighScore == -1)
+        {
+            // Guardamos sus puntos y le pasamos la pelota al equipo rival
+            currentEnvidoHighScore = score;
+            envidoFirstSpeakerSeat = senderSeat;
+
+            // Buscamos a alguien del equipo rival para que responda
+            int rivalSeat = FindNextRivalToSpeak(senderSeat);
+            
+            // Le mandamos el RPC para que se le prenda la UI, pasándole los puntos a superar
+            int rivalScore = envidoValue_Seats[rivalSeat];
+            PromptEnvidoScoreClientRpc(rivalScore, currentEnvidoHighScore, true, GetRpcTargetParams(Seats[rivalSeat].clientId));
+        }
+        else
+        {
+            // 3. ¿ES EL SEGUNDO EN HABLAR? (El que responde)
+            // Si llegó acá, es porque sus puntos eran mayores (o ganaba por mano en empate). Gana él.
+            waitingForEnvidoScores = false;
+            
+            int pointsWon = AddEnvidoPointsToWinner(senderTeam);
+            EnvidoConfirmationClientRpc(); // Avisamos que terminó toda la fase de envido
+            AnnounceEnvidoWinnerClientRpc(senderTeam, pointsWon, score); // Anunciamos al ganador final
+
+            // Reiniciamos las variables para la próxima mano
+            currentEnvidoHighScore = -1;
+            envidoFirstSpeakerSeat = -1;
+        }
+    }
+    public void FoldEnvidoScore()
+    {
+        FoldEnvidoScoreServerRpc();
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void FoldEnvidoScoreServerRpc(RpcParams rpc = default)
+    {
+        if (!waitingForEnvidoScores) return;
+
+        ulong senderId = rpc.Receive.SenderClientId;
+        int senderSeat = GetSeatIndexFromClientId(senderId);
+        int senderTeam = Seats[senderSeat].team;
+
+        // 1. EL JUGADOR GRITA QUE SE RINDE
+        AnnounceCallToAllClientRpc(senderSeat, "Son buenas.");
+
+        // 2. GANA EL EQUIPO RIVAL (El que cantó primero)
+        waitingForEnvidoScores = false;
+        int winnerTeam = (senderTeam == 1) ? 2 : 1;
+        
+        int pointsWon = AddEnvidoPointsToWinner(winnerTeam);
+        EnvidoConfirmationClientRpc();
+        AnnounceEnvidoWinnerClientRpc(winnerTeam, pointsWon, currentEnvidoHighScore);
+
+        // Reiniciamos las variables
+        currentEnvidoHighScore = -1;
+        envidoFirstSpeakerSeat = -1;
+    }
+
 
     /// <summary>
     /// SE LLAMA CUANDO El EQUIPO CONTRARIO ACEPTA O RECHAZA EL TRUCO.
@@ -930,49 +1021,52 @@ public class GameManager : NetworkBehaviour
     {
         EnvidoConfirmationServerRpc(Isaccepted);
     }
-    
+
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void EnvidoConfirmationServerRpc(bool accepted, RpcParams rpc = default)
     {
         ulong sender = rpc.Receive.SenderClientId;
         int senderSeat = GetSeatIndexFromClientId(sender);
         int senderTeam = Seats[senderSeat].team;
-        
-        int winnerTeam;
-        int pointsWon;
-        int winningScore = 0;
 
         if (accepted)
         {
-            int winnerSeat = -1;
-            int maxEnvidoValue = -1;
-            scoringLogic.AddEnvidoPointsByStage();
-            
-            foreach (var pd in envidoValue_Seats)
-            {
-                if (pd.Value > maxEnvidoValue)
-                {
-                    maxEnvidoValue = pd.Value;
-                    winnerSeat = pd.Key;
-                }
-            }
-            winnerTeam = Seats[winnerSeat].team;
-            winningScore = maxEnvidoValue; 
-            pointsWon = AddEnvidoPointsToWinner(winnerTeam);
+            // 1. Fase de cantar los tantos
+            waitingEnvidoConfirmation = false;
+            waitingForEnvidoScores = true;
+
+            // 2. Avisamos que se aceptó ("¡QUIERO!")
+            AnnounceCallToAllClientRpc(senderSeat, "¡QUIERO!");
+
+            // 3.quién tiene que hablar primero (El Mano)
+            int firstToSpeakSeat = currentHand.GetStartingSeatThisHand();
+
+            int firstSpeakerScore = envidoValue_Seats[firstToSpeakSeat];
+
+            PromptEnvidoScoreClientRpc(firstSpeakerScore, 0, false, GetRpcTargetParams(Seats[firstToSpeakSeat].clientId));
         }
         else
         {
-            winnerTeam = (senderTeam == 1) ? 2 : 1;
-            pointsWon = AddEnvidoPointsToWinner(winnerTeam);
+            // Si dice "No Quiero", la lógica sigue igual que antes (gana el otro equipo)
+            int winnerTeam = (senderTeam == 1) ? 2 : 1;
+            int pointsWon = AddEnvidoPointsToWinner(winnerTeam);
+            waitingEnvidoConfirmation = false;
+            
+            AnnounceCallToAllClientRpc(senderSeat, "No quiero.");
+            EnvidoConfirmationClientRpc();
+            AnnounceEnvidoWinnerClientRpc(winnerTeam, pointsWon, 0);
         }
-
-        AnnounceCallToAllClientRpc(senderSeat, "¡QUIERO!");
-        
-        waitingEnvidoConfirmation = false;
-        EnvidoConfirmationClientRpc();
-        AnnounceEnvidoWinnerClientRpc(winnerTeam, pointsWon, winningScore);
     }
 
+    [Rpc(SendTo.SpecifiedInParams)]
+    private void PromptEnvidoScoreClientRpc(int myEnvidoScore, int pointsToBeat, bool isAnswering, RpcParams rpcParams = default)
+    {
+        OnPromptEnvidoScore?.Invoke(this, new OnPromptEnvidoScoreArgs {
+            myEnvidoScore = myEnvidoScore,
+            pointsToBeat = pointsToBeat,
+            isAnswering = isAnswering
+        });
+    }
 
     [Rpc(SendTo.Everyone)]
     private void EnvidoConfirmationClientRpc()
@@ -1191,9 +1285,22 @@ public class GameManager : NetworkBehaviour
             }
         }
     }
+    private int FindNextRivalToSpeak(int currentSpeakerSeat)
+    {
+        int currentSpeakerTeam = Seats[currentSpeakerSeat].team;
+        int nextSeat = (currentSpeakerSeat + 1) % totalPlayers;
 
-    //? Metodos para el TurnManager
+        // Damos la vuelta a la mesa hasta encontrar a un rival
+        while (Seats[nextSeat].team == currentSpeakerTeam)
+        {
+            nextSeat = (nextSeat + 1) % totalPlayers;
+        }
+
+        return nextSeat;
+    }
+    //? Helpers para el TurnManager
     public PlayerData GetPlayerData(int seatIndex) => Seats[seatIndex];
     public int[] GetLastSeats() => LastSeats;
     public int GetCurrentRound() => currentHand != null ? currentHand.GetCurrentRoundIndex() : 0;
+
 }
