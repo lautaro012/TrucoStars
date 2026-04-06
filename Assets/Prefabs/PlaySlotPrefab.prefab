@@ -147,7 +147,7 @@ MonoBehaviour:
   - {fileID: 378363715629489498}
   - {fileID: 7014039493468686972}
   - {fileID: 4830350866116556914}
-  cardPrefab: {fileID: 5229078745881043896, guid: d6683f07cbbd27f82a4e7afd1d9b6186, type: 3}
+  cardPrefab: {fileID: 5229078745881043896, guid: c70c63b262cd0e74a9415d1363ad0fdd, type: 3}
   Deck: {fileID: 5986781049453417385}
   ShuffledCardAnchor: {fileID: 7431563601701887741}
 --- !u!1 &7688534220857950928

@@ -75,15 +75,30 @@ public class CurrentPointsTrackerUI : MonoBehaviour
     private void SetupTeamUI()
     {
         LocalPlayerTeam = GameClientManager.Instance.GetLocalTeam();
+        int totalplayers = GameManager.Instance.GetTotalPlayers();
         if (LocalPlayerTeam == 1)
         {
-            Team1Name.text = "Nos";
-            Team2Name.text = "Ellos";
+            if(totalplayers == 2)
+            {
+                Team1Name.text = "Vos"; 
+                Team2Name.text = "El"; 
+            } else
+            {
+                Team1Name.text = "Nos";
+                Team2Name.text = "Ellos";
+            }
         }
         else
         {
-            Team1Name.text = "Ellos";
-            Team2Name.text = "Nos";
+            if(totalplayers == 2)
+            {
+                Team1Name.text = "El";
+                Team2Name.text = "Yo";
+            } else
+            {
+                Team1Name.text = "Ellos";
+                Team2Name.text = "Nos";
+            }
         }
     }
     private void GCM_SetCurrentTurn(object sender, IsMyTurnArgs e)

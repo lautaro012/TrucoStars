@@ -32,6 +32,8 @@ public class GameClientManager : MonoBehaviour
     [Header("UI Panels Dinámicos")]
     [SerializeField] private DynamicResponsePanelUI dynamicPanel;
     [SerializeField] private GameObject normalActionsPanel;
+    [SerializeField] private BackLogUI backlog;
+
     public static GameClientManager Instance { get; private set; }
     private readonly Dictionary<ulong, int> _clientToSeat = new();
     private readonly Dictionary<int, int> _seatToTeam = new();
@@ -89,11 +91,10 @@ public class GameClientManager : MonoBehaviour
         GameManager.Instance.OnSomeoneCalledEnvido += GM_OnSomeoneCalledEnvido;
         GameManager.Instance.OnWaitingEnvidoConfirmation += GM_OnWaitingEnvidoConfirmation;
         GameManager.Instance.OnWaitingTrucoConfirmation += GM_OnWaitingTrucoConfirmation;
+        GameManager.Instance.OnEnvidoWinnerDecided += GameManager_OnEnvidoWinnerDecided;
+        GameManager.Instance.OnTrucoAccepted += GameManager_OnTrucoAccepted;
+        GameManager.Instance.OnPromptEnvidoScore += GameManager_OnPromptEnvidoScore;
     }
-
-
-
-
 
     //* EVENTOS PARA LA UI */
     public event EventHandler HideLoadingScreen;
@@ -114,22 +115,82 @@ public class GameClientManager : MonoBehaviour
     /*
         METODOS 
     */
+    private void GameManager_OnPromptEnvidoScore(object sender, OnPromptEnvidoScoreArgs e)
+    {
+        if (normalActionsPanel != null) normalActionsPanel.SetActive(false);
+
+        var options = new List<ButtonOption>();
+        string title = "TUS TANTOS";
+
+        if (!e.isAnswering)
+        {
+            // 1. SOY EL PRIMERO EN HABLAR (El Mano)
+            title = "CANTÁ TUS TANTOS";
+            options.Add(new ButtonOption { 
+                buttonText = $"Tengo {e.myEnvidoScore}", 
+                buttonColor = Color.blue, 
+                // Llamaremos a una nueva función en el ServerRpc
+                buttonAction = () => GameManager.Instance.AnnounceMyEnvidoScore(e.myEnvidoScore) 
+            });
+        }
+        else
+        {
+            // 2. ESTOY RESPONDIENDO AL RIVAL
+            title = $"EL RIVAL TIENE {e.pointsToBeat}";
+
+            // Lógica de Truco: Si mis puntos son mayores, muestro la opción de matarlo
+            // (La lógica del empate >= la podemos afinar después dependiendo de quién es mano)
+            if (e.myEnvidoScore >= e.pointsToBeat) 
+            {
+                options.Add(new ButtonOption { 
+                    buttonText = $"{e.myEnvidoScore} son mejores", 
+                    buttonColor = Color.green, 
+                    buttonAction = () => GameManager.Instance.AnnounceMyEnvidoScore(e.myEnvidoScore) 
+                });
+            }
+
+            // La opción de rendirse siempre está disponible
+            options.Add(new ButtonOption { 
+                buttonText = "Son buenas", 
+                buttonColor = Color.red, 
+                buttonAction = () => GameManager.Instance.FoldEnvidoScore() 
+            });
+        }
+
+        dynamicPanel.ShowOptions(title, options.ToArray());
+    }
     private void GM_OnRoundFinished(object sender, OnRoundFinishedArgs e)
     {
         HideEnvidoButtons?.Invoke(this, EventArgs.Empty);
         HideTrucoButtons?.Invoke(this, EventArgs.Empty);
-        ShowEndRoundText?.Invoke(this, new OnRoundFinishedArgs { shuffleDeck = e.shuffleDeck});
+        ShowEndRoundText?.Invoke(this, new OnRoundFinishedArgs { shuffleDeck = e.shuffleDeck });
+        
+        // El resumen al Log:
+        backlog.AddLogMessage($"<b>--- RONDA FINALIZADA ---</b>");
+        if (e.team1PointsGained > 0) backlog.AddLogMessage($"<color=#55FF55>Equipo 1</color> suma {e.team1PointsGained} puntos.");
+        if (e.team2PointsGained > 0) backlog.AddLogMessage($"<color=#FF5555>Equipo 2</color> suma {e.team2PointsGained} puntos.");
     }
+
     private void GM_OnWaitingEnvidoConfirmation(object sender, OnWaitingConfirmationArgs e)
     {
-        HideEnvidoButtons?.Invoke(this, EventArgs.Empty);
-        EnvidoStageEnded?.Invoke(this, EventArgs.Empty);
+        if (e.isStageEnded)
+        {
+            if (normalActionsPanel != null) normalActionsPanel.SetActive(true);
+            
+            // 2. Avisamos a los botones hijos
+            EnvidoStageEnded?.Invoke(this, EventArgs.Empty);
+        }
+        else
+        {
+            HideEnvidoButtons?.Invoke(this, EventArgs.Empty);
+        }
     }
     private void GM_OnWaitingTrucoConfirmation(object sender, OnWaitingConfirmationArgs e)
     {
-        EnvidoStageEnded?.Invoke(this, EventArgs.Empty); //? termina etapa de envido
         if (e.isStageEnded)
         {
+            if (normalActionsPanel != null) normalActionsPanel.SetActive(true);
+            EnvidoStageEnded?.Invoke(this, EventArgs.Empty); //? termina etapa de envido
             TrucoStageEnded?.Invoke(this, EventArgs.Empty);
         }
         else
@@ -137,9 +198,11 @@ public class GameClientManager : MonoBehaviour
             HideTrucoButtons?.Invoke(this, EventArgs.Empty);
         }
     }
+
     private void GM_AreAllPlayersConnected(object sender, EventArgs e)
     {
         HideLoadingScreen?.Invoke(this, EventArgs.Empty);
+        backlog.AddLogMessage("Comienzo de partida.");
     }
     private void GM_OnRoundStarted(object sender, EventArgs e)
     {
@@ -156,34 +219,6 @@ public class GameClientManager : MonoBehaviour
         SetEnvidoButton?.Invoke(this, new CanICallEnvidoArgs { canICallEnvido = canCallEnvido });
     }
 
-   /* private void GM_OnSomeoneCalledTruco(object sender, OnTeamTrucoCall e)
-    {
-        string MT = "";
-        string UT = "";
-        bool HUPG = true;
-        if (e.trucostage == TrucoStage.Truco)
-        {
-            MT = "TRUCO";
-            UT = "RETRUCO";
-        }
-        else if (e.trucostage == TrucoStage.Retruco)
-        {
-            MT = "RETRUCO";
-            UT = "QUIERO VALE 4";
-        }
-        else
-        {
-            MT = "QUIERO VALE 4";
-            UT = "null button";
-            HUPG = true;
-        }
-        TrucoEvent?.Invoke(this, new TrucoEventArgs
-        {
-            mainText = MT,
-            upgradeText = UT,
-            hideUpgrade = HUPG
-        });
-    }*/
     private void GM_OnSomeoneCalledTruco(object sender, OnTeamTrucoCall e)
     {
         // 1. Apagamos tus botones de jugar normales
@@ -213,6 +248,9 @@ public class GameClientManager : MonoBehaviour
             });
         }
         dynamicPanel.ShowOptions(title, options.ToArray());
+
+        string teamColor = e.team == 1 ? "#55FF55" : "#FF5555";
+        backlog.AddLogMessage($"<color={teamColor}>Equipo {e.team}</color> cantó <b>{e.trucostage}</b>. Esperando respuesta...");
     }
 
     private void GM_OnSomeoneCalledEnvido(object sender, OnTeamEnvidoCall e)
@@ -245,25 +283,20 @@ public class GameClientManager : MonoBehaviour
         options.Add(new ButtonOption { buttonText = "No Quiero", buttonColor = Color.red, buttonAction = () => GameManager.Instance.EnvidoConfirmation(false) });
 
         dynamicPanel.ShowOptions(title, options.ToArray());
+
+        string teamColor = e.team == 1 ? "#55FF55" : "#FF5555";
+        backlog.AddLogMessage($"<color={teamColor}>Equipo {e.team}</color> cantó <b>{e.envidoStage}</b>. Esperando respuesta...");
     }
-    /*
-    private void GM_OnSomeoneCalledEnvido(object sender, OnTeamEnvidoCall e)
+    private void GameManager_OnEnvidoWinnerDecided(object sender, OnEnvidoWinnerArgs e)
     {
-        string GT = "EL EQUIPO " + e.team + " CANTO " + e.envidoStage;
-        string UT = "";
-        bool hideUpgradeButton = false;
-        if (e.envidoStage == EnvidoStage.Envido)
-        {
-            UT = "REAL ENVIDO";
-        }
-        else UT = "FALTA ENVIDO";
-        if (e.envidoStage == EnvidoStage.FaltaEnvido) hideUpgradeButton = true;
-        EnvidoEvent?.Invoke(this, new EnvidoEventArgs
-        {
-            mainText = GT,
-            upgradeText = UT,
-            hideUpgrade = hideUpgradeButton
-        });
-    }*/
+        string teamColor = e.winningTeam == 1 ? "#55FF55" : "#FF5555";
+        backlog.AddLogMessage($"<color={teamColor}>Equipo {e.winningTeam}</color> ganó el Envido con {e.winningScore} tantos. (+{e.pointsWon} pts)");
+    }
+
+    private void GameManager_OnTrucoAccepted(object sender, OnTrucoAcceptedArgs e)
+    {
+        backlog.AddLogMessage($"El <b>{e.currentStage}</b> fue <color=#55FF55>ACEPTADO</color>. Se juega por {e.pointsAtStake} puntos.");
+    }
+
 
 }
