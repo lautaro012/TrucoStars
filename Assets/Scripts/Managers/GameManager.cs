@@ -584,9 +584,9 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void ClickOnCardServerRpc(int cardParentIndex, RpcParams rpc = default) 
     {
-        if (waitingEnvidoConfirmation || waitingTrucoConfirmation)
+        if (waitingEnvidoConfirmation || waitingTrucoConfirmation || waitingForEnvidoScores)
         {
-            Debug.LogWarning("NO PUEDES CLICKEAR SI ESTAS ESPERANDO CONFIRMACION");
+            Debug.LogWarning("NO PUEDES CLICKEAR SI ESTAS ESPERANDO CONFIRMACION O CANTANDO TANTOS");
             return;
         }
         if (roundFinished.Value)
@@ -627,9 +627,9 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        if (waitingEnvidoConfirmation || waitingTrucoConfirmation)
+        if (waitingEnvidoConfirmation || waitingTrucoConfirmation || waitingForEnvidoScores)
         {
-            Debug.LogWarning("No puedes jugar mientras hay confirmación pendiente.");
+            Debug.LogWarning("No puedes jugar mientras hay confirmación pendiente o cantando tantos.");
             return;
         }
 
@@ -837,7 +837,7 @@ public class GameManager : NetworkBehaviour
         if (accepted)
         {
             scoringLogic.TrucoAccepted();
-            AnnounceTrucoAcceptedClientRpc(scoringLogic.trucoStage, scoringLogic.GetPointsInPlay());
+            AnnounceTrucoAcceptedClientRpc(scoringLogic.GetTrucoStage(), scoringLogic.GetPointsInPlay(), TeamThatCalledTruco);
         }
         else
         {
@@ -853,8 +853,12 @@ public class GameManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Everyone)]
-    private void AnnounceTrucoAcceptedClientRpc(TrucoStage stage, int points)
+    private void AnnounceTrucoAcceptedClientRpc(TrucoStage stage, int points, int callerteam)
     {
+
+        scoringLogic.SetTrucoStage(stage);
+        TeamThatCalledTruco = callerteam;
+
         OnTrucoAccepted?.Invoke(this, new OnTrucoAcceptedArgs { currentStage = stage, pointsAtStake = points });
     }
 
@@ -878,9 +882,9 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void TrucoServerRpc(RpcParams rpc = default)
     {
-        if (roundFinished.Value || waitingTrucoConfirmation || scoringLogic.trucoStage == TrucoStage.Vale4)
+        if (roundFinished.Value || waitingTrucoConfirmation || scoringLogic.GetTrucoStage() == TrucoStage.Vale4)
         {
-            Debug.LogWarning("NO SE PUEDE CANTAR TRUCO, round finished: " + roundFinished.Value + ", waitingconfirmation: " + waitingTrucoConfirmation + ", trucoStage: " + scoringLogic.trucoStage);
+            Debug.LogWarning("NO SE PUEDE CANTAR TRUCO, round finished: " + roundFinished.Value + ", waitingconfirmation: " + waitingTrucoConfirmation + ", trucoStage: " + scoringLogic.GetTrucoStage());
             return;
         }
         ulong sender = rpc.Receive.SenderClientId;
@@ -894,7 +898,13 @@ public class GameManager : NetworkBehaviour
         }
         TeamThatCalledTruco = callerTeam;
         waitingTrucoConfirmation = true;
-        scoringLogic.NextTrucoStage();
+
+        TrucoStage currentStage = scoringLogic.GetTrucoStage();
+        TrucoStage nextStage = currentStage == TrucoStage.None ? TrucoStage.Truco :
+                               currentStage == TrucoStage.Truco ? TrucoStage.Retruco : 
+                               TrucoStage.Vale4;
+        scoringLogic.SetTrucoStage(nextStage);
+
         List<ulong> targetClients = new List<ulong>();
         foreach (var kvp in Seats)
         {
@@ -904,11 +914,11 @@ public class GameManager : NetworkBehaviour
             }
         }
         
-        string textCall = scoringLogic.trucoStage == TrucoStage.Truco ? "¡TRUCO!" :
-                  scoringLogic.trucoStage == TrucoStage.Retruco ? "¡QUIERO RE-TRUCO!" : "¡QUIERO VALE 4!";
+        string textCall = scoringLogic.GetTrucoStage() == TrucoStage.Truco ? "¡TRUCO!" :
+                  scoringLogic.GetTrucoStage() == TrucoStage.Retruco ? "¡QUIERO RE-TRUCO!" : "¡QUIERO VALE 4!";
         AnnounceCallToAllClientRpc(senderSeat, textCall);
         
-        SendTrucoToOpponentClientRpc(callerTeam, scoringLogic.trucoStage, GetRpcTargetParams(targetClients.ToArray()));
+        SendTrucoToOpponentClientRpc(callerTeam, scoringLogic.GetTrucoStage(), GetRpcTargetParams(targetClients.ToArray()));
         StartTrucoConfirmationClientRpc();
     }
 
@@ -1186,6 +1196,23 @@ public class GameManager : NetworkBehaviour
         RestartDefaultValues();
     }
 
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ToggleSenaServerRpc(Seña sena, bool active, RpcParams rpc = default)
+    {
+        int seatIndex = GetSeatIndexFromClientId(rpc.Receive.SenderClientId);
+        // Le avisamos a todos: "El jugador X puso la seña Y en estado Z (true/false)"
+        BroadcastSenaClientRpc(seatIndex, sena, active);
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void BroadcastSenaClientRpc(int seatIndex, Seña sena, bool active)
+    {
+        if (Seats_index.TryGetValue(seatIndex, out var seat))
+        {
+            seat.SetSenaState(sena, active);
+        }
+    }
+
 
 
     //? FUNCION QUE DEVUELVE LOS PARAMS CON LOS ID A LOS CUALES MANDARLE EL CLIENTRPC 
@@ -1216,6 +1243,12 @@ public class GameManager : NetworkBehaviour
         waitingEnvidoConfirmation = false;
         TeamThatCalledEnvido = -1;
         TeamThatCalledTruco = -1;
+        RestartScoringLogicValuesClientRpc();
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void RestartScoringLogicValuesClientRpc()
+    {
         scoringLogic.RestartScoringValues();
     }
 
@@ -1302,5 +1335,9 @@ public class GameManager : NetworkBehaviour
     public PlayerData GetPlayerData(int seatIndex) => Seats[seatIndex];
     public int[] GetLastSeats() => LastSeats;
     public int GetCurrentRound() => currentHand != null ? currentHand.GetCurrentRoundIndex() : 0;
-
+    public TrucoStage GetCurrentTrucoStage()
+    {
+        return scoringLogic.GetTrucoStage();
+    }
+    public int GetTeamThatCalledTruco() => TeamThatCalledTruco;
 }

@@ -15,7 +15,7 @@ public class ScoringLogic
     [Header("Estado de la ronda")]
     public EnvidoStage envidoStage { get; private set; } = EnvidoStage.None;
     private int envidoPointsInPlay = 0;
-    public TrucoStage trucoStage { get; private set; } = TrucoStage.None;
+    private TrucoStage TrucoStage = TrucoStage.None;
     private int pointsInPlay = 1;
 
 
@@ -159,7 +159,7 @@ public class ScoringLogic
     }
     public void RestartScoringValues()
     {
-        trucoStage = TrucoStage.None;
+        TrucoStage = TrucoStage.None;
         envidoStage = EnvidoStage.None;
         pointsInPlay = 1;
         envidoPointsInPlay = 0;
@@ -174,10 +174,15 @@ public class ScoringLogic
     }
     public void NextTrucoStage()
     {
-        if (trucoStage == TrucoStage.None) trucoStage = TrucoStage.Truco;
-        else if (trucoStage == TrucoStage.Truco) trucoStage = TrucoStage.Retruco;
-        else trucoStage = TrucoStage.Vale4;
+        if (TrucoStage == TrucoStage.None) TrucoStage = TrucoStage.Truco;
+        else if (TrucoStage == TrucoStage.Truco) TrucoStage = TrucoStage.Retruco;
+        else TrucoStage = TrucoStage.Vale4;
     }
+    public void SetTrucoStage(TrucoStage stage)
+    {
+        TrucoStage = stage;
+    }
+    public TrucoStage GetTrucoStage() => TrucoStage;
     public void NextEnvidoStage(EnvidoStage nextStage)
     {
         envidoStage = nextStage;

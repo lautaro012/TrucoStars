@@ -1,4 +1,5 @@
 using System;
+using NUnit.Framework.Constraints;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -8,7 +9,6 @@ public class RoundButtonsUI : MonoBehaviour
 {
     [SerializeField] private Button Truco;
     [SerializeField] private Button Surrender;
-
     [SerializeField] private TextMeshProUGUI CantarTrucoText;
 
 
@@ -31,6 +31,7 @@ public class RoundButtonsUI : MonoBehaviour
         GameClientManager.Instance.HideTrucoButtons += GCM_HideTrucoButtons;
     }
 
+
     private void GCM_HideTrucoButtons(object sender, EventArgs e)
     {
         Hide();
@@ -43,7 +44,22 @@ public class RoundButtonsUI : MonoBehaviour
 
     private void GCM_SetCurrentTurn(object sender, IsMyTurnArgs eventArg)
     {
-        if (eventArg.IsMyTurn) Truco.gameObject.SetActive(true);
+        if (eventArg.IsMyTurn)
+        {
+            SetTrucoButtonText();
+            int myTeam = GameClientManager.Instance.GetLocalTeam();
+            TrucoStage stage = GameManager.Instance.GetCurrentTrucoStage();
+
+
+            if (stage == TrucoStage.Vale4 || GameManager.Instance.GetTeamThatCalledTruco() == myTeam)
+            {
+                Truco.gameObject.SetActive(false);
+            }
+            else
+            {
+                Truco.gameObject.SetActive(true);
+            }
+        }
         else Truco.gameObject.SetActive(false);
     }
 
@@ -53,10 +69,24 @@ public class RoundButtonsUI : MonoBehaviour
     }
     private void Show()
     {
+        SetTrucoButtonText();
         gameObject.SetActive(true);
     }
     private void Hide()
     {
         gameObject.SetActive(false);
+    }
+
+    private void SetTrucoButtonText()
+    {
+        string buttonText = GameManager.Instance.GetCurrentTrucoStage() switch
+        {
+            TrucoStage.None => "Truco",
+            TrucoStage.Truco => "RE TRUCO",
+            TrucoStage.Retruco => "QUIERO VALE 4",
+            TrucoStage.Vale4 => "----",
+            _ => "Deafault Truco",
+        };
+        CantarTrucoText.text = buttonText;
     }
 }

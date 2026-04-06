@@ -676,7 +676,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bdd64d0f1bd9b94590bb8c3e24f1213, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SeatLayoutManager
-  seatPrefab: {fileID: 1584906621023634710, guid: 7f08d710ff8a98d4cbda91320a2b0782, type: 3}
+  seatPrefab: {fileID: 1543861375994758833, guid: a34c47bbd4dc7e044aa4b4e277f57596, type: 3}
   SeatRoot: {fileID: 1024515012}
 --- !u!1 &65367077
 GameObject:
@@ -1412,8 +1412,8 @@ RectTransform:
   - {fileID: 775804955}
   - {fileID: 203286817}
   - {fileID: 2000072380}
-  - {fileID: 1267245566}
   - {fileID: 725460809}
+  - {fileID: 1267245566}
   - {fileID: 1372640264}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -6635,7 +6635,7 @@ MonoBehaviour:
   table: {fileID: 2092418329}
   center: 1
   radius: 1.5
-  heightY: 1
+  heightY: 0
   roundFinished:
     m_InternalValue: 0
 --- !u!114 &1207492704

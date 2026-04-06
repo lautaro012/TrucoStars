@@ -512,8 +512,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 3293158142818781824}
   - {fileID: 1040542561347747270}
@@ -533,6 +533,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardFront: {fileID: 8840341219664350064}
   hover: {fileID: 3312347439290478094}
+  isInteractable: 0
 --- !u!65 &7368627446175905694
 BoxCollider:
   m_ObjectHideFlags: 0
