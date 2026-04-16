@@ -1,13 +1,12 @@
 using System;
 using System.Collections;
-using Unity.Mathematics;
-using Unity.Netcode;
 using UnityEngine;
 
 public class Card : MonoBehaviour
 {
     [SerializeField] private GameObject cardFront;
     [SerializeField] private GameObject hover;
+    [SerializeField] private Transform contenedorVisual;
 
     private float Yoffset = 0.01f;
     private CardSO cardSO;
@@ -21,7 +20,7 @@ public class Card : MonoBehaviour
 
     public bool isInteractable = false; 
 
-    void OnMouseEnter()
+   /* void OnMouseEnter()
     {
         // Si no es interactable (ej: es del rival), ignoramos el mouse
         if (!isInteractable) return; 
@@ -46,6 +45,30 @@ public class Card : MonoBehaviour
             transform.localPosition.y - Yoffset, 
             transform.localPosition.z
         );
+    }*/
+    public void SetHoverState(bool isHovering)
+    {
+        if (!isInteractable) return;
+
+        if (isHovering && !hover.activeSelf)
+        {
+            hover.SetActive(true);
+            contenedorVisual.localPosition = new Vector3(
+                contenedorVisual.localPosition.x, 
+                contenedorVisual.localPosition.y + Yoffset, 
+                contenedorVisual.localPosition.z
+            );
+        }
+        else if (!isHovering && hover.activeSelf)
+        {
+            hover.SetActive(false);
+            // VOLVEMOS A BAJAR SOLO EL DIBUJO
+            contenedorVisual.localPosition = new Vector3(
+                contenedorVisual.localPosition.x, 
+                contenedorVisual.localPosition.y - Yoffset, 
+                contenedorVisual.localPosition.z
+            );
+        }
     }
 
     public void SetCardParentIndex(int index) {

@@ -36,6 +36,11 @@ public class ConfirmationScreenUI : MonoBehaviour
         GameManager.Instance.OnWaitingTrucoConfirmation += GameManager_OnWaitingTrucoConfirmation;
         Hide();
     }
+    private void OnDestroy()
+    {
+        GameManager.Instance.OnRoundFinished -= GameManager_OnRoundFinished;
+        GameManager.Instance.OnWaitingTrucoConfirmation -= GameManager_OnWaitingTrucoConfirmation;
+    }
 
     private void GameManager_OnWaitingTrucoConfirmation(object sender, OnWaitingConfirmationArgs e)
     {

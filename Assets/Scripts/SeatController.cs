@@ -36,8 +36,15 @@ public class SeatController : MonoBehaviour
     private Card[] HandCards;
     private int[] cardsIndexes;
 
+    [Header("Seleccion de Cartas")]
+    private Card cartaSeleccionadaActual; 
+    [SerializeField] private LayerMask CartasEnMano; 
+
+
     [Header("Cámara y Visión")]
     [SerializeField] private Transform cameraMount; 
+    [SerializeField] private Transform HeadTransform; 
+
     public float mouseSensitivity = 250f;
     public float minPitch = -60f;
     public float maxPitch = 30f;
@@ -61,21 +68,61 @@ public class SeatController : MonoBehaviour
     {
         GameManager.Instance.OnPlayerMadeCall += GameManager_OnPlayerMadeCall;
     }
-
     private void Update()
     {
         if (isLocal)
         {
             HandleSenaInputs();
             HandleCameraMovement();
+            HandleCardHoverAndClick();
+            HeadTransform.localScale = Vector3.zero;
         }
+        
         if (headTarget != null && cameraMount != null) 
         {
-            // Calculamos un punto a 3 metros en la dirección "Forward" del mount
             Vector3 posicionObjetivo = cameraMount.position + (cameraMount.forward * 2f);
-            
-            // Aplicamos la posición al objeto físico que el Rig está mirando
             headTarget.position = posicionObjetivo;
+        }
+
+        // NUEVO: Movimos el Lerp al Update general. 
+        // De esta forma, el brazo se mueve suavemente tanto para el jugador local 
+        // como para los jugadores remotos (que reciben el pesoObjetivoIK por el RPC)
+        if (manoCartasIK != null)
+        {
+            manoCartasIK.weight = Mathf.Lerp(manoCartasIK.weight, pesoObjetivoIK, Time.deltaTime * 5f);
+        }
+    }
+
+    private void HandleCameraMovement()
+    {
+        if (Input.GetMouseButton(1)) 
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+
+            float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+            float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+
+            xRotation -= mouseY;
+            xRotation = Mathf.Clamp(xRotation, minPitch, maxPitch);
+            yRotation += mouseX;
+            yRotation = Mathf.Clamp(yRotation, -maxYaw, maxYaw);
+
+            cameraMount.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
+            
+            // Calculamos el IK antes del timer de red, para enviar el dato fresco
+            pesoObjetivoIK = Mathf.InverseLerp(0f, maxPitch, xRotation);
+
+            syncTimer += Time.deltaTime;
+            if (syncTimer >= syncRate)
+            {
+                syncTimer = 0f;
+                // Enviamos ambos datos por la red
+                GameManager.Instance.SyncHeadRotationServerRpc(seatIndex, cameraMount.localRotation, pesoObjetivoIK);
+            }
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
         }
     }
  
@@ -92,55 +139,15 @@ public class SeatController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.B)) GameManager.Instance.ToggleSenaServerRpc(Seña.Tres, true);
         if (Input.GetKeyUp(KeyCode.B)) GameManager.Instance.ToggleSenaServerRpc(Seña.Tres, false);
 
-        if (Input.GetMouseButtonDown(0)) HandleCardClick();
+        if (Input.GetMouseButtonDown(0)) HandleCardHoverAndClick();
     }
 
-    private void HandleCameraMovement()
-        {
-            if (Input.GetMouseButton(1)) 
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-
-                float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-                float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
-
-                xRotation -= mouseY;
-                xRotation = Mathf.Clamp(xRotation, minPitch, maxPitch);
-                yRotation += mouseX;
-                yRotation = Mathf.Clamp(yRotation, -maxYaw, maxYaw);
-
-                cameraMount.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
-                
-                syncTimer += Time.deltaTime;
-                if (syncTimer >= syncRate)
-                {
-                    syncTimer = 0f;
-                    GameManager.Instance.SyncHeadRotationServerRpc(seatIndex, cameraMount.localRotation);
-                }
-
-                // NUEVO: Calcular qué tanto estamos mirando hacia abajo
-                // InverseLerp devuelve 0 cuando xRotation es 0, y 1 cuando xRotation es igual a maxPitch.
-                // Los valores negativos (mirar hacia arriba) se clavan en 0.
-                pesoObjetivoIK = Mathf.InverseLerp(0f, maxPitch, xRotation);
-            }
-            else
-            {
-                Cursor.lockState = CursorLockMode.None;
-                // Opcional: si sueltas el click, la mano vuelve a bajar
-                // pesoObjetivoIK = 0f; 
-            }
-
-            // Aplicar el peso al IK de forma suave (Lerp) para que no sea un movimiento robótico
-            if (manoCartasIK != null)
-            {
-                manoCartasIK.weight = Mathf.Lerp(manoCartasIK.weight, pesoObjetivoIK, Time.deltaTime * 5f);
-            }
-        }
-    public void ReceiveHeadRotation(Quaternion newRotation)
+    public void ReceiveHeadRotation(Quaternion newRotation, float newIKWeight)
     {
         if (!isLocal && cameraMount != null)
         {
             cameraMount.localRotation = newRotation;
+            pesoObjetivoIK = newIKWeight; 
         }
     }
 
@@ -241,7 +248,7 @@ public class SeatController : MonoBehaviour
         }
     }
 
-    private void HandleCardClick()
+    /*private void HandleCardClick()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit))
@@ -252,10 +259,33 @@ public class SeatController : MonoBehaviour
                     GameManager.Instance.ClickOnCardServerRpc(clickedCard.GetCardParentIndex());
             }
         }
-    }
+    }*/
 
     public void ShowCardsInHand() { foreach(var c in HandCards) if(c != null) c.gameObject.SetActive(true); }
-    public void ClearHand() { foreach(var c in HandCards) if(c != null) c.gameObject.SetActive(false); }
+    public void ClearHand() 
+    { 
+        for (int i = 0; i < HandCards.Length; i++)
+        {
+            if (HandCards[i] != null) 
+            {
+                // 1. Apagamos la carta visualmente
+                HandCards[i].gameObject.SetActive(false);
+                
+                // 2. La devolvemos a su anclaje original en la mano
+                HandCards[i].transform.SetParent(handHolderPoints[i]);
+                
+                // 3. Reseteamos su posición y rotación (0,0,0 local)
+                HandCards[i].transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+                
+                // 4. Clave: Volvemos a hacerla interactuable para la nueva mano 
+                // (porque la corrutina de tirar la carta lo había puesto en false)
+                if (isLocal) 
+                {
+                    HandCards[i].isInteractable = true;
+                }
+            }
+        }
+    }
     private void OnDestroy() { if (GameManager.Instance != null) GameManager.Instance.OnPlayerMadeCall -= GameManager_OnPlayerMadeCall; }
     public Transform HideCardAndGetOrigin(int slotIndex)
     {
@@ -274,6 +304,53 @@ public class SeatController : MonoBehaviour
         }
         return null;
     }
+    private void HandleCardHoverAndClick()
+    {
+        // 1. Tiramos el rayo desde la cámara al mouse
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, CartasEnMano))
+        {
+            // ¿Es una carta y es interactuable?
+            if (hit.collider.TryGetComponent<Card>(out var hitCard) && hitCard.isInteractable)
+            {
+                // Si el mouse acaba de entrar a una carta NUEVA
+                if (cartaSeleccionadaActual != hitCard)
+                {
+                    // Apagamos la carta vieja (si veníamos de mirar otra)
+                    if (cartaSeleccionadaActual != null) 
+                        cartaSeleccionadaActual.SetHoverState(false);
+                    
+                    // Guardamos y prendemos la nueva
+                    cartaSeleccionadaActual = hitCard;
+                    cartaSeleccionadaActual.SetHoverState(true);
+                }
 
+                // LÓGICA DEL CLICK (movida acá adentro para aprovechar que ya sabemos qué carta es)
+                if (Input.GetMouseButtonDown(0))
+                {
+                    if (TurnManager.Instance.IsSeatIndexTurn(seatIndex))
+                    {
+                        GameManager.Instance.ClickOnCardServerRpc(cartaSeleccionadaActual.GetCardParentIndex());
+                        
+                        // Apagamos el hover para que no quede flotando al irse a la mesa
+                        cartaSeleccionadaActual.SetHoverState(false);
+                        cartaSeleccionadaActual = null;
+                    }
+                }
+                
+                // Salimos de la función para no ejecutar el paso 3
+                return; 
+            }
+        }
+
+        // 3. Si el raycast no pegó en NADA, o pegó en la mesa/pared
+        if (cartaSeleccionadaActual != null)
+        {
+            // Apagamos la carta que teníamos iluminada
+            cartaSeleccionadaActual.SetHoverState(false);
+            cartaSeleccionadaActual = null;
+        }
+    }
 
 }

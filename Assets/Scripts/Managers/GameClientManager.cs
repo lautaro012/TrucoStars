@@ -37,7 +37,7 @@ public class GameClientManager : MonoBehaviour
     public static GameClientManager Instance { get; private set; }
     private readonly Dictionary<ulong, int> _clientToSeat = new();
     private readonly Dictionary<int, int> _seatToTeam = new();
-
+    public bool CanLocalCallEnvido { get; private set; } 
     public int LocalSeat { get; private set; } = -1;
     public int LocalTeam { get; private set; } = -1;
 
@@ -94,6 +94,23 @@ public class GameClientManager : MonoBehaviour
         GameManager.Instance.OnEnvidoWinnerDecided += GameManager_OnEnvidoWinnerDecided;
         GameManager.Instance.OnTrucoAccepted += GameManager_OnTrucoAccepted;
         GameManager.Instance.OnPromptEnvidoScore += GameManager_OnPromptEnvidoScore;
+    }
+        private void OnDestroy()
+    {
+        if(GameManager.Instance != null)
+        {
+            GameManager.Instance.OnRoundFinished -= GM_OnRoundFinished;
+            GameManager.Instance.AreAllPlayersConnected -= GM_AreAllPlayersConnected;
+            GameManager.Instance.OnRoundStarted -= GM_OnRoundStarted;
+            TurnManager.Instance.OnChangedTurn -= GM_OnChangedTurn;
+            GameManager.Instance.OnSomeoneCalledTruco -= GM_OnSomeoneCalledTruco;
+            GameManager.Instance.OnSomeoneCalledEnvido -= GM_OnSomeoneCalledEnvido;
+            GameManager.Instance.OnWaitingEnvidoConfirmation -= GM_OnWaitingEnvidoConfirmation;
+            GameManager.Instance.OnWaitingTrucoConfirmation -= GM_OnWaitingTrucoConfirmation;
+            GameManager.Instance.OnEnvidoWinnerDecided -= GameManager_OnEnvidoWinnerDecided;
+            GameManager.Instance.OnTrucoAccepted -= GameManager_OnTrucoAccepted;
+            GameManager.Instance.OnPromptEnvidoScore -= GameManager_OnPromptEnvidoScore;        
+        }
     }
 
     //* EVENTOS PARA LA UI */
@@ -210,15 +227,38 @@ public class GameClientManager : MonoBehaviour
         SetNewRound?.Invoke(this, EventArgs.Empty);             //? SETEAR EL TURNO ACTUAL
         ArePlayingOnlyTwo?.Invoke(this, EventArgs.Empty);       //? CHEQUEAR SI SON DOS JUGADORES
     }
-    private void GM_OnChangedTurn(object sender, OnChangeTurn_TurnChangedArgs e)
+    /*private void GM_OnChangedTurn(object sender, OnChangeTurn_TurnChangedArgs e)
     {
         //* Setear de quien es el turno
         bool isLocalPlayerturn = NetworkManager.Singleton.LocalClientId == e.clientId;
         bool canCallEnvido = isLocalPlayerturn && e.round == 0 && e.ImLastTurn;
         SetCurrentTurn?.Invoke(this, new IsMyTurnArgs { IsMyTurn = isLocalPlayerturn, TeamTurn = e.team });
         SetEnvidoButton?.Invoke(this, new CanICallEnvidoArgs { canICallEnvido = canCallEnvido });
-    }
+    }*/
+    private void GM_OnChangedTurn(object sender, OnChangeTurn_TurnChangedArgs e)
+    {
+        bool isLocalPlayerTurn = NetworkManager.Singleton.LocalClientId == e.clientId;
+        bool isFirstRound = e.round == 0;
 
+        // 1. Conseguimos quiénes son los "Pies" (los dos últimos asientos de la mano)
+        int[] pies = GameManager.Instance.GetLastSeats();
+        int mySeat = GameClientManager.Instance.GetLocalSeat();
+        
+        // 2. Verificamos si soy uno de esos dos
+        bool soyPie = (mySeat == pies[0] || mySeat == pies[1]);
+
+        // 3. Aplicamos la regla estricta: Solo en mi turno, en 1ra ronda, Y si soy pie.
+        CanLocalCallEnvido = isLocalPlayerTurn && isFirstRound && soyPie;
+
+        SetCurrentTurn?.Invoke(this, new IsMyTurnArgs { 
+            IsMyTurn = isLocalPlayerTurn, 
+            TeamTurn = e.team 
+        });
+
+        SetEnvidoButton?.Invoke(this, new CanICallEnvidoArgs { 
+            canICallEnvido = CanLocalCallEnvido 
+        });
+    }
     private void GM_OnSomeoneCalledTruco(object sender, OnTeamTrucoCall e)
     {
         // 1. Apagamos tus botones de jugar normales
@@ -243,7 +283,7 @@ public class GameClientManager : MonoBehaviour
         {
             options.Insert(0, new ButtonOption { 
                 buttonText = raiseText, 
-                buttonColor = Color.blue,
+                buttonColor = Color.white,
                 buttonAction = () => { GameManager.Instance.TrucoConfirmation(true); GameManager.Instance.Truco(); } 
             });
         }
@@ -264,18 +304,18 @@ public class GameClientManager : MonoBehaviour
         // Agregamos las opciones de subir apuesta según corresponda
         if (e.envidoStage == EnvidoStage.Envido)
         {
-            options.Add(new ButtonOption { buttonText = "Envido", buttonColor = Color.blue, buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.Envido) });
-            options.Add(new ButtonOption { buttonText = "Real Envido", buttonColor = Color.aliceBlue, buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.RealEnvido) });
+            options.Add(new ButtonOption { buttonText = "Envido", buttonColor = Color.white, buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.Envido) });
+            options.Add(new ButtonOption { buttonText = "Real Envido", buttonColor = Color.white, buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.RealEnvido) });
         }
         else if (e.envidoStage == EnvidoStage.EnvidoEnvido)
         {
-            options.Add(new ButtonOption { buttonText = "Real Envido", buttonColor = Color.aquamarine ,buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.RealEnvido) });
+            options.Add(new ButtonOption { buttonText = "Real Envido", buttonColor = Color.white ,buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.RealEnvido) });
         }
 
         // El Falta Envido siempre está disponible a menos que ya lo hayan cantado
         if (e.envidoStage != EnvidoStage.FaltaEnvido)
         {
-            options.Add(new ButtonOption { buttonText = "Falta Envido", buttonColor = Color.coral ,buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.FaltaEnvido) });
+            options.Add(new ButtonOption { buttonText = "Falta Envido", buttonColor = Color.white ,buttonAction = () => GameManager.Instance.RaiseEnvido(EnvidoStage.FaltaEnvido) });
         }
 
         // Agregamos los obligatorios al final
@@ -299,4 +339,42 @@ public class GameClientManager : MonoBehaviour
     }
 
 
+    public void OpenEnvidoSelectionPanel()
+    {
+        normalActionsPanel.SetActive(false); // Escondemos Truco/Mazo
+
+        var options = new List<ButtonOption>
+        {
+            new() {
+                buttonText = "Envido",
+                buttonColor = Color.white,
+                buttonAction = () => GameManager.Instance.Envido(EnvidoStage.Envido)
+            },
+            new ButtonOption
+            {
+                buttonText = "Real Envido",
+                buttonColor = Color.white,
+                buttonAction = () => GameManager.Instance.Envido(EnvidoStage.RealEnvido)
+            },
+            new ButtonOption
+            {
+                buttonText = "Falta Envido",
+                buttonColor = Color.white,
+                buttonAction = () => GameManager.Instance.Envido(EnvidoStage.FaltaEnvido)
+            },
+            // BOTÓN VOLVER: Simplemente apaga el panel dinámico y prende el normal
+            new() {
+                buttonText = "← Volver",
+                buttonColor = Color.gray,
+                buttonAction = () =>
+                {
+                    // El dynamicPanel se oculta solo al ejecutar cualquier action (según tu código)
+                    normalActionsPanel.SetActive(true);
+                }
+            }
+        };
+
+        dynamicPanel.ShowOptions("ENVIDO", options.ToArray());
+    }
+ 
 }

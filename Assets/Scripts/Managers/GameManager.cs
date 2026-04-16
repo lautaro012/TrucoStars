@@ -449,6 +449,7 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void ShowDeckClientRpc(int[] lastSeats)
     {
+        LastSeats = lastSeats; 
         PlaySlotView LastplaySlot = playSlots_Seats[lastSeats[0]];
         PlaySlotView previousLastPlaySlot = playSlots_Seats[lastSeats[1]];
         LastplaySlot.LastTurn(true);
@@ -960,6 +961,11 @@ public class GameManager : NetworkBehaviour
             Debug.LogWarning("NO SE PUEDE CANTAR ENVIDO SI LA APUESTA YA ESTA SUBIDA. stage: " + scoringLogic.envidoStage + " y call: " + call);
             return;
         }
+        int currentRound = GetCurrentRound();
+        if (currentRound != 0) {
+            Debug.LogWarning("Intento de Envido fuera de la primera ronda.");
+            return; 
+        }
 
         //? Tomo el receptor del call
         ulong sender = rpc.Receive.SenderClientId;
@@ -1250,7 +1256,8 @@ public class GameManager : NetworkBehaviour
     private void RestartScoringLogicValuesClientRpc()
     {
         scoringLogic.RestartScoringValues();
-    }
+        TeamThatCalledTruco = -1; 
+    } 
 
     public int GetLocalPlayerTeam()
     {
@@ -1300,24 +1307,25 @@ public class GameManager : NetworkBehaviour
         return Team2Points.Value;
     }
 
-    //? RECIBE LA ROTACION DE LA CABEZA DEL JUGADOR
+    //? RECIBE LA ROTACION DE LA CABEZA DEL JUGADOR Y EL PESO DEL BRAZO
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SyncHeadRotationServerRpc(int seatIndex, Quaternion headRotation, RpcParams rpc = default)
+    public void SyncHeadRotationServerRpc(int seatIndex, Quaternion headRotation, float ikWeight, RpcParams rpc = default)
     {
-        SyncHeadRotationClientRpc(seatIndex, headRotation);
+        SyncHeadRotationClientRpc(seatIndex, headRotation, ikWeight);
     }
 
     [Rpc(SendTo.Everyone)]
-    private void SyncHeadRotationClientRpc(int seatIndex, Quaternion headRotation)
+    private void SyncHeadRotationClientRpc(int seatIndex, Quaternion headRotation, float ikWeight)
     {
         if (Seats_index.TryGetValue(seatIndex, out var seat))
         {
             if (seat.TryGetComponent<SeatController>(out var controller))
             {
-                controller.ReceiveHeadRotation(headRotation);
+                controller.ReceiveHeadRotation(headRotation, ikWeight); // Le pasamos el nuevo dato
             }
         }
     }
+    
     private int FindNextRivalToSpeak(int currentSpeakerSeat)
     {
         int currentSpeakerTeam = Seats[currentSpeakerSeat].team;

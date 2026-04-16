@@ -8,6 +8,10 @@ public class WaitingForOpponentUI : MonoBehaviour
         GameClientManager.Instance.HideLoadingScreen += GameManager_HideLoadingScreen;
         Show();
     }
+    private void OnDestroy()
+    {
+        GameClientManager.Instance.HideLoadingScreen -= GameManager_HideLoadingScreen;
+    }
     private void GameManager_HideLoadingScreen(object sender, EventArgs e)
     {
         Hide();

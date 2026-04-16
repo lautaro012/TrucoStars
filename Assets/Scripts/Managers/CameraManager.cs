@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Camera))]
 public class CameraManager : MonoBehaviour
 {
     [Header("Ajustes de Visión")]
@@ -12,7 +13,12 @@ public class CameraManager : MonoBehaviour
 
     private float xRotation = 0f; 
     private float yRotation = 0f; 
+    private Camera cam;
 
+    private void Awake()
+    {
+        cam = GetComponent<Camera>();
+    }
 
     private void Start()
     {
@@ -47,6 +53,25 @@ public class CameraManager : MonoBehaviour
         else
         {
             Cursor.lockState = CursorLockMode.None;
+        }
+    }
+
+    public void SetupTableCamera(int totalPlayers)
+    {
+        if (totalPlayers == 6) // 3v3 (Separados por 60°)
+        {
+            cam.fieldOfView = 35f; // Lente de retrato (cerrado)
+            maxYaw = 65f;          // Te dejo girar lo suficiente para ver al de al lado
+        }
+        else if (totalPlayers == 4) // 2v2 (Separados por 90°)
+        {
+            cam.fieldOfView = 45f; // Lente medio
+            maxYaw = 95f;          // Te dejo girar más para llegar al de 90°
+        }
+        else // 1v1 (2 Jugadores, frente a frente)
+        {
+            cam.fieldOfView = 55f; // Lente abierto
+            maxYaw = 30f;          // No hace falta girar tanto el cuello
         }
     }
 }

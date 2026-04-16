@@ -54,4 +54,6 @@ public class DynamicResponsePanelUI : MonoBehaviour
     {
         gameObject.SetActive(false);
     }
+
+    
 }

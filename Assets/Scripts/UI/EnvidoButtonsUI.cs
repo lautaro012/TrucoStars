@@ -65,7 +65,14 @@ public class EnvidoButtonsUI : MonoBehaviour
         GameClientManager.Instance.EnvidoStageEnded += GCM_EnvidoStageEnded;
         GameManager.Instance.SentEnvidoValue += GameManager_OnSentEnvidoValue;
     }
-
+    private void OnDestroy()
+    {
+        GameClientManager.Instance.ShowMainRoundButtons -= GCM_OnRoundStarted;
+        GameClientManager.Instance.SetEnvidoButton -= GCM_SetEnvidoButton;
+        GameClientManager.Instance.HideEnvidoButtons -= GCM_HideEnvidoButtons;
+        GameClientManager.Instance.EnvidoStageEnded -= GCM_EnvidoStageEnded;
+        GameManager.Instance.SentEnvidoValue -= GameManager_OnSentEnvidoValue;        
+    }
 
     private void GCM_EnvidoStageEnded(object sender, EventArgs e)
     {

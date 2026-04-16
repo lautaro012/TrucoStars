@@ -46,16 +46,37 @@ public class Hand
     public void AddPointToTeam1() { Team1RoundsWon++; }
     public void AddPointToTeam2() { Team2RoundsWon++; }
     public void CloseHand() { IsClosed = true; }
+
     public int CalculateWinner()
     {
-        if (IsClosed)
+        if (!IsClosed)
         {
-            TeamWinner = Team1RoundsWon == 2 ? 1 : 2;
+            Debug.LogWarning("-----NO ESTAMOS EN RONDA 3 TODAVIA, O LA MANO NO ESTA CERRADA---------");
+            return -1;
+        }
+
+        if (Team1RoundsWon > Team2RoundsWon)
+        {
+            TeamWinner = 1;
+        }
+        else if (Team2RoundsWon > Team1RoundsWon)
+        {
+            TeamWinner = 2;
         }
         else
         {
-            Debug.LogWarning("-----NO ESTAMOS EN RONDA 3 TODAVIA, O LA MANO NO ESTA CERRADA---------");
-            TeamWinner = -1;
+            // Regla 1: Si alguien ganó la primera ronda, gana la mano.
+            if (firstRoundWinner != 0)
+            {
+                TeamWinner = firstRoundWinner;
+            }
+            else
+            {
+                // Regla 2: Si la primera también fue parda, gana el MANO.
+                // Usamos el StartingSeatThisHand. Como los asientos pares (0, 2, 4) son Equipo 1 
+                // y los impares (1, 3, 5) son Equipo 2, hacemos esta pequeña matemática:
+                TeamWinner = (StartingSeatThisHand % 2) + 1;
+            }
         }
         return TeamWinner;
     }
@@ -70,40 +91,29 @@ public class Hand
     public void RegisterRoundWinner(int winnerSeat, int winnerTeam)
     {
         Rounds[CurrentRoundIndex].Close(winnerSeat);
-        Debug.Log("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
         Debug.Log("REGISTRANDO RONDA " + CurrentRoundIndex + ", Gana asiento " + winnerSeat + " del equipo " + winnerTeam);
-        if (winnerSeat >= 0)
+        
+        if (winnerSeat >= 0) // ALGUIEN GANÓ LA RONDA
         {
             if (winnerTeam == 1) AddPointToTeam1();
             else AddPointToTeam2();
 
+            // Guardamos quién ganó la primera para desempatar más adelante
             if (CurrentRoundIndex == 0) firstRoundWinner = winnerTeam;
-
-            CheckForWinner(); //* CHEQUEO SI HAY GANADOR
-            return;
         }
-        //* EMPATE 
-        if (CurrentRoundIndex == 0)
+        else // EMPATE (PARDA)
         {
+            // La magia de la parda: 1 punto para cada equipo
             AddPointToTeam1();
             AddPointToTeam2();
         }
-        else
-        {
-            if (Team1RoundsWon > Team2RoundsWon) //*SI HAY EMPATE EN 2DA RONDA GANA EL QUE GANO LA PRIMERA
-            {
-                AddPointToTeam1();
-            }
-            else
-            {
-                AddPointToTeam2();
-            }
-        }
-        CheckForWinner(); //* CHEQUEO SI HAY GANADOR
+
+        CheckForWinner(); // CHEQUEO SI HAY GANADOR
     }
     private void CheckForWinner()
     {
-        bool isHandOver = Team1RoundsWon == 2 || Team2RoundsWon == 2 || CurrentRoundIndex == 2;
+        // Si alguien llega a 2 puntos, o ya jugamos la 3ra ronda (índice 2), se termina la mano.
+        bool isHandOver = Team1RoundsWon >= 2 || Team2RoundsWon >= 2 || CurrentRoundIndex == 2;
         if (isHandOver)
         {
             CloseHand();

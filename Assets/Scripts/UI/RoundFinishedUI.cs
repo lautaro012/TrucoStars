@@ -21,6 +21,11 @@ public class RoundFinishedUI : MonoBehaviour
         GameClientManager.Instance.ShowEndRoundText += GCM_ShowEndRoundText;
         GameClientManager.Instance.ShowMainRoundButtons += GCM_OnRoundStarted;
     }
+    private void OnDestroy()
+    {
+        GameClientManager.Instance.ShowEndRoundText -= GCM_ShowEndRoundText;
+        GameClientManager.Instance.ShowMainRoundButtons -= GCM_OnRoundStarted;
+    }
 
     private void GCM_OnRoundStarted(object sender, EventArgs e)
     {

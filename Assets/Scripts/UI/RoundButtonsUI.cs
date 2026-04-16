@@ -8,6 +8,7 @@ using UnityEngine.UI;
 public class RoundButtonsUI : MonoBehaviour
 {
     [SerializeField] private Button Truco;
+    [SerializeField] private Button EnvidoMainButton;
     [SerializeField] private Button Surrender;
     [SerializeField] private TextMeshProUGUI CantarTrucoText;
 
@@ -22,13 +23,24 @@ public class RoundButtonsUI : MonoBehaviour
         {
             GameManager.Instance.Surrender();
         });
-    }
+        EnvidoMainButton.onClick.AddListener(() =>
+        {
+            GameClientManager.Instance.OpenEnvidoSelectionPanel();
+        });
+        }
     private void Start()
     { 
         GameClientManager.Instance.ShowMainRoundButtons += GCM_OnRoundStarted;
         GameClientManager.Instance.SetCurrentTurn += GCM_SetCurrentTurn;
         GameClientManager.Instance.TrucoStageEnded += GCM_TrucoStageEnded;
         GameClientManager.Instance.HideTrucoButtons += GCM_HideTrucoButtons;
+    }
+    private void OnDestroy()
+    {
+        GameClientManager.Instance.ShowMainRoundButtons -= GCM_OnRoundStarted;
+        GameClientManager.Instance.SetCurrentTurn -= GCM_SetCurrentTurn;
+        GameClientManager.Instance.TrucoStageEnded -= GCM_TrucoStageEnded;
+        GameClientManager.Instance.HideTrucoButtons -= GCM_HideTrucoButtons;    
     }
 
 
@@ -41,26 +53,35 @@ public class RoundButtonsUI : MonoBehaviour
         Show();
         Truco.gameObject.SetActive(false);
     }
-
     private void GCM_SetCurrentTurn(object sender, IsMyTurnArgs eventArg)
     {
         if (eventArg.IsMyTurn)
         {
+            // 1. Mostrar u ocultar Envido (La validación viene del GameClientManager)
+            EnvidoMainButton.gameObject.SetActive(GameClientManager.Instance.CanLocalCallEnvido);
+
+            // 2. Textos y lógica del Truco
             SetTrucoButtonText();
             int myTeam = GameClientManager.Instance.GetLocalTeam();
             TrucoStage stage = GameManager.Instance.GetCurrentTrucoStage();
+            int lastTeamTruco = GameManager.Instance.GetTeamThatCalledTruco();
 
-
-            if (stage == TrucoStage.Vale4 || GameManager.Instance.GetTeamThatCalledTruco() == myTeam)
+            // 3. Mostrar u ocultar Truco
+            if (stage == TrucoStage.Vale4 || (lastTeamTruco != -1 && lastTeamTruco == myTeam))
             {
                 Truco.gameObject.SetActive(false);
             }
             else
             {
-                Truco.gameObject.SetActive(true);
+                Truco.gameObject.SetActive(true); // ¡AHORA SÍ!
             }
         }
-        else Truco.gameObject.SetActive(false);
+        else 
+        {
+            // Si NO es mi turno, me aseguro de apagar todo
+            Truco.gameObject.SetActive(false);
+            EnvidoMainButton.gameObject.SetActive(false);
+        }
     }
 
     private void GCM_OnRoundStarted(object sender, EventArgs e)

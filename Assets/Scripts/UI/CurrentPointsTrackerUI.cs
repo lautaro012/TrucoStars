@@ -11,14 +11,13 @@ public class CurrentPointsTrackerUI : MonoBehaviour
     [SerializeField] private GameObject[] Team2Points;
     [SerializeField] private GameObject Team1LocalIndicator;
     [SerializeField] private GameObject Team2LocalIndicator;
-
     [SerializeField] private GameObject Team1TurnIndicator;
     [SerializeField] private GameObject Team2TurnIndicator;
     [SerializeField] private TextMeshProUGUI Team1Name;
     [SerializeField] private TextMeshProUGUI Team2Name;
     [SerializeField] private TextMeshProUGUI RoundNumber;
-    [SerializeField] private Image[] P1_Light_Tracker = new Image[2];
-    [SerializeField] private Image[] P2_Light_Tracker = new Image[2];
+    [SerializeField] private GameObject[] P1_Light_Tracker = new GameObject[2];
+    [SerializeField] private GameObject[] P2_Light_Tracker = new GameObject[2];
     private int roundsWonByTeam1 = 0;
     private int roundsWonByTeam2 = 0;
     private int LocalPlayerTeam;
@@ -41,17 +40,32 @@ public class CurrentPointsTrackerUI : MonoBehaviour
         RestartLightPoints();
         ResetScores();
     }
+    private void OnDestroy()
+    {
+        GameManager.Instance.OnTeam1PointsChanged -= OnTeam1Points_OnValueChanged;
+        GameManager.Instance.OnTeam2PointsChanged -= OnTeam2PointsChanged_OnValueChanged;
+        GameManager.Instance.OnRoundWined -= OnRoundWined_OnValuechanged;
+        GameClientManager.Instance.SetNewRound -= GCM_SetNewRound;
+        GameClientManager.Instance.SetCurrentTurn -= GCM_SetCurrentTurn;
+        GameClientManager.Instance.PlayersDataReady -= (_, __) => SetupTeamUI();
+    }
 
     private void OnRoundWined_OnValuechanged(object sender, OnTeamWinnerArgs e)
     {
         if(e.winnerTeam == 1)
         {
-            P1_Light_Tracker[roundsWonByTeam1].color = Color.green;
+            P1_Light_Tracker[roundsWonByTeam1].SetActive(true);
             roundsWonByTeam1++;    
-        }else
+        }else if(e.winnerTeam == 2)
         {
-            P2_Light_Tracker[roundsWonByTeam2].color =  Color.green;;    
+            P2_Light_Tracker[roundsWonByTeam2].SetActive(true);
             roundsWonByTeam2++;
+        } else
+        {
+            P2_Light_Tracker[roundsWonByTeam2].SetActive(true);
+            roundsWonByTeam2++;
+            P1_Light_Tracker[roundsWonByTeam1].SetActive(true);
+            roundsWonByTeam1++;             
         }
     }
 
@@ -80,11 +94,11 @@ public class CurrentPointsTrackerUI : MonoBehaviour
         {
             if(totalplayers == 2)
             {
-                Team1Name.text = "Vos"; 
-                Team2Name.text = "El"; 
+                Team1Name.text = "Jugador 1"; 
+                Team2Name.text = "Jugador 2"; 
             } else
             {
-                Team1Name.text = "Nos";
+                Team1Name.text = "Nosotros";
                 Team2Name.text = "Ellos";
             }
         }
@@ -92,12 +106,12 @@ public class CurrentPointsTrackerUI : MonoBehaviour
         {
             if(totalplayers == 2)
             {
-                Team1Name.text = "El";
-                Team2Name.text = "Yo";
+                Team1Name.text = "Jugador 2";
+                Team2Name.text = "Jugador 1";
             } else
             {
                 Team1Name.text = "Ellos";
-                Team2Name.text = "Nos";
+                Team2Name.text = "Nosotros";
             }
         }
     }
@@ -107,6 +121,10 @@ public class CurrentPointsTrackerUI : MonoBehaviour
         {
             Team1TurnIndicator.SetActive(true);
             Team2TurnIndicator.SetActive(false);
+
+            Team1Name.fontStyle |= FontStyles.Underline;
+            Team2Name.fontStyle &= ~FontStyles.Underline;
+
             if (e.IsMyTurn)
             {
                 if(LocalPlayerTeam == e.TeamTurn)
@@ -123,6 +141,10 @@ public class CurrentPointsTrackerUI : MonoBehaviour
         {
             Team1TurnIndicator.SetActive(false);
             Team2TurnIndicator.SetActive(true);
+            
+            
+            Team2Name.fontStyle |= FontStyles.Underline;
+            Team1Name.fontStyle &= ~FontStyles.Underline;
             if(e.IsMyTurn)
             {
                 if(LocalPlayerTeam == e.TeamTurn)
@@ -133,6 +155,7 @@ public class CurrentPointsTrackerUI : MonoBehaviour
             {
                 Team2LocalIndicator.SetActive(false);
                 Team1LocalIndicator.SetActive(false);
+
             }
         }
     }
@@ -140,8 +163,8 @@ public class CurrentPointsTrackerUI : MonoBehaviour
     private void RestartLightPoints()
     {
         for (int i = 0; i < P1_Light_Tracker.Length; i++) {
-            P1_Light_Tracker[i].color = Color.red;
-            P2_Light_Tracker[i].color = Color.red;
+            P1_Light_Tracker[i].SetActive(false);
+            P2_Light_Tracker[i].SetActive(false);
         }       
         roundsWonByTeam1 = 0;
         roundsWonByTeam2 = 0;

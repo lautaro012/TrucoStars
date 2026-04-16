@@ -46,6 +46,10 @@ public class EnvidoConfirmationUI : MonoBehaviour
         GameManager.Instance.OnWaitingEnvidoConfirmation += GM_OnWaitingEnvidoConfirmation;
         Hide();
     }
+    private void OnDestroy()
+    {
+        GameManager.Instance.OnWaitingEnvidoConfirmation -= GM_OnWaitingEnvidoConfirmation;
+    }
 
     private void GM_OnWaitingEnvidoConfirmation(object sender, OnWaitingConfirmationArgs e)
     {

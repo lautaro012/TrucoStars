@@ -12,6 +12,10 @@ public class GameOverUI : MonoBehaviour
         GameManager.Instance.OnGameFinished += GameManager_OnGameFinished;
         Hide();
     }
+    private void OnDestroy()
+    {
+        GameManager.Instance.OnGameFinished -= GameManager_OnGameFinished;
+    }
 
     private void GameManager_OnGameFinished(object sender, OnTeamWinnerArgs e)
     {
