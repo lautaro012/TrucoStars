@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using System.Linq;
-using Unity.VisualScripting;
-
 public class OnWaitingConfirmationArgs : EventArgs
 {
     public bool isStageEnded;
@@ -66,7 +64,6 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private int totalPlayers;
 
     [Header("Helpers")]
-    [SerializeField] private TestLobbyUIMainScene testLobby;
     [SerializeField] private SeatLayoutManager seatLayoutManager;
     [SerializeField] private TablePlayAreaManager tablePlayAreaManager;
     [SerializeField] private ScoringLogic scoringLogic = new ScoringLogic();
@@ -140,6 +137,17 @@ public class GameManager : NetworkBehaviour
 
     public event EventHandler<OnTeamWinnerArgs> OnGameFinished;
 
+
+    public enum GameState
+    {
+        None,                 // Esperando que se conecten los jugadores
+        SetupHand,            // Repartiendo cartas y calculando envidos ocultos
+        PlayingTurn,          // Estado normal: Esperando que un jugador tire carta o cante
+        WaitingEnvido,        // JUEGO PAUSADO: Alguien cantó Envido
+        WaitingTruco,         // JUEGO PAUSADO: Alguien cantó Truco
+        RoundFinished,        // Terminó una de las 3 rondas (se decide quién gana)
+        HandFinished          // Terminó la mano completa (se suman puntos al score)
+    }
 
     //? --- NETWORK VARIABLES --- */
 
