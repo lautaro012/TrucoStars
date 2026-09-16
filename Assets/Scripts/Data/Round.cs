@@ -1,30 +1,32 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
 public class Round
 {
     private int RoundIndex; //* NUMERO DE RONDA 
     private int leaderSeat; //* LIDER DE ESTA RONDA
     private int winnerSeat; //* GANADOR DE ESTA RONDA
     private int[] cardsPlayedBySeats; //* CARTAS JUGADAS POR CADA JUGADOR EN ESTA RONDA
-    private int expectedCards;
+    private int expectedCards; //* CUÁNTAS CARTAS FALTAN PARA TERMINAR
     private int playCount = 0;
     List<int> playOrderSeatIndices; //* ORDEN EN QUE FUERON JUGADAS
     bool roundClosed = false; //*ronda terminada
 
-    public Round(int roundIndex, int leaderSeat, int totalPlayers)
+    public Round(int roundIndex, int leaderSeat, int totalTableSeats, int activePlayers = -1)
     {
         RoundIndex = roundIndex;
         this.leaderSeat = leaderSeat;
         winnerSeat = -1;
-        cardsPlayedBySeats = Enumerable.Repeat(-1, totalPlayers).ToArray();
-        expectedCards = totalPlayers;
-        playOrderSeatIndices = new List<int>(totalPlayers);
+        
+        cardsPlayedBySeats = Enumerable.Repeat(-1, totalTableSeats).ToArray();
+        
+        expectedCards = (activePlayers == -1) ? totalTableSeats : activePlayers;
+        
+        playOrderSeatIndices = new List<int>(expectedCards);
     }
 
+       
     public bool TryPlay(int seatIndex, int cardId) {
-
         if (roundClosed)
         {
             Debug.LogError("LA RONDA ESTA CERRADA, NO SE PUEDE JUGAR: " + seatIndex + " " + cardId);
@@ -40,6 +42,7 @@ public class Round
             Debug.LogError("EL SEAT YA JUGO UNA CARTA ");
             return false;
         }
+
         cardsPlayedBySeats[seatIndex] = cardId;
         playOrderSeatIndices.Add(seatIndex);
         playCount++;
@@ -49,6 +52,7 @@ public class Round
     public bool IsComplete() {
         return playCount == expectedCards;
     }
+
     public int GetCardOfSeat(int seatIndex) => cardsPlayedBySeats[seatIndex];
     public int GetSeatOfCard(int cardId) => playOrderSeatIndices[cardsPlayedBySeats[cardId]];
     public int GetLeaderSeat() => leaderSeat;

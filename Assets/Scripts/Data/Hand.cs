@@ -12,18 +12,22 @@ public class Hand
     private bool IsClosed = false;
     private int TeamWinner = -1;
     private int firstRoundWinner = 0;
-
-    public Hand(int handIndex, int startingSeat, int totalPlayers)
+    private int totalTableSeats;
+    private int activePlayersThisHand;
+    public Hand(int handIndex, int startingSeat, int totalTableSeats, int activePlayersThisHand = -1)
     {
         HandIndex = handIndex;
         Team1RoundsWon = 0;
         Team2RoundsWon = 0;
         StartingSeatThisHand = startingSeat;
         CurrentRoundIndex = 0;
+        this.totalTableSeats = totalTableSeats;
+        this.activePlayersThisHand = activePlayersThisHand;
         Rounds = new List<Round>(3) {
-            new(0, startingSeat, totalPlayers)
+            new(0, startingSeat, totalTableSeats, activePlayersThisHand)
         };
     }
+    
     public Round CurrentRound => Rounds[CurrentRoundIndex];
 
     //* GETTERS
@@ -38,9 +42,11 @@ public class Hand
     //* SETTERS
     public void SetFirstRoundWinner(int winnerTeam) { firstRoundWinner = winnerTeam; }
     public void SetStartingSeatThisHand(int startingSeat) { StartingSeatThisHand = startingSeat; }
-    public int NextCurrentRoundIndex()
+    public int StartNextRound(int nextLeader)
     {
         CurrentRoundIndex++;
+        Rounds.Add(new Round(CurrentRoundIndex, nextLeader, totalTableSeats, activePlayersThisHand));
+        
         return CurrentRoundIndex;
     }
     public void AddPointToTeam1() { Team1RoundsWon++; }

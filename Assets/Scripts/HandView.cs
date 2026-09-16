@@ -93,7 +93,7 @@ public class HandView : MonoBehaviour
             if (hit.collider.TryGetComponent<Card>(out var clickedCard))
             {
                 int clickedCardIndex = clickedCard.GetCardParentIndex();
-                if (TurnManager.Instance.IsSeatIndexTurn(seatIndex))
+                if (GameManager.Instance.currentTurnSeatIndex.Value == seatIndex)
                 {
                     GameManager.Instance.ClickOnCardServerRpc(clickedCardIndex);
                 }

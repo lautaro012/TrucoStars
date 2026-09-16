@@ -1,4 +1,3 @@
-using System;
 using TMPro;
 using UnityEngine;
 
@@ -13,73 +12,46 @@ public class CurrentPointsTrackerUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI TurnIndicator;
     [SerializeField] private GameObject[] P1_Light_Tracker = new GameObject[2];
     [SerializeField] private GameObject[] P2_Light_Tracker = new GameObject[2];
+    
     private int roundsWonByTeam1 = 0;
     private int roundsWonByTeam2 = 0;
 
-
-    int currentRound = 1;
-
-    private void Start()
+    public void SetupTeamColor(int myTeam)
     {
-        GameManager.Instance.OnTeam1PointsChanged += OnTeam1Points_OnValueChanged;
-        GameManager.Instance.OnTeam2PointsChanged += OnTeam2PointsChanged_OnValueChanged;
-        GameManager.Instance.OnRoundWined += OnRoundWined_OnValuechanged;
-        GameClientManager.Instance.SetNewRound += GCM_SetNewRound;
-        GameClientManager.Instance.SetCurrentTurn += GCM_SetCurrentTurn;
-        GameClientManager.Instance.PlayersDataReady += (_, __) => SetupTeamUI();
-        if (GameClientManager.Instance.GetLocalTeam() != -1) SetupTeamUI();
-        RestartLightPoints();
+        if (myTeam == 1) Team1Title.color = Color.green;
+        else if (myTeam == 2) Team2Title.color = Color.green;
     }
 
-    private void OnRoundWined_OnValuechanged(object sender, OnTeamWinnerArgs e)
+    public void UpdateTeam1Points(int points) => Team1Points.text = points.ToString();
+    
+    public void UpdateTeam2Points(int points) => Team2Points.text = points.ToString();
+
+
+    public void AddRoundWinLight(int winnerTeam)
     {
-        if(e.winnerTeam == 1)
+        if(winnerTeam == 1 && roundsWonByTeam1 < P1_Light_Tracker.Length)
         {
             P1_Light_Tracker[roundsWonByTeam1].SetActive(true);
             roundsWonByTeam1++;    
-        }else
+        }
+        else if(winnerTeam == 2 && roundsWonByTeam2 < P2_Light_Tracker.Length)
         {
             P2_Light_Tracker[roundsWonByTeam2].SetActive(true);    
             roundsWonByTeam2++;
         }
     }
 
-    private void GCM_SetNewRound(object sender, EventArgs e)
+    public void SetRoundText(int currentRound)
     {
-        currentRound++;
         RoundNumber.text = currentRound.ToString();
-        RestartLightPoints();
     }
 
-    private void OnTeam2PointsChanged_OnValueChanged(object sender, OnPointsGainedArgs e)
+    public void SetTurnIndicator(bool isMyTurn)
     {
-        Team2Points.text = e.points.ToString();
+        TurnIndicator.text = isMyTurn ? "YOUR TURN" : "NOT YOUR TURN";
     }
 
-    private void OnTeam1Points_OnValueChanged(object sender, OnPointsGainedArgs e)
-    {
-        Team1Points.text = e.points.ToString();
-    }
-
-    private void SetupTeamUI()
-    {
-        int myTeam = GameClientManager.Instance.GetLocalTeam();
-        if (myTeam == 1) Team1Title.color = Color.green;
-        else Team2Title.color = Color.green;
-    }
-    private void GCM_SetCurrentTurn(object sender, IsMyTurnArgs e)
-    {
-        if (e.IsMyTurn)
-        {
-            TurnIndicator.text = "YOUR TURN";
-        }
-        else
-        {
-            TurnIndicator.text = "NOT YOUR TURN";
-        }
-    }
-
-    private void RestartLightPoints()
+    public void RestartLightPoints()
     {
         for (int i = 0; i < P1_Light_Tracker.Length; i++) {
             P1_Light_Tracker[i].SetActive(false);

@@ -4,12 +4,6 @@ using UnityEngine.SceneManagement;
 
 public static class Loader 
 {
-    public enum Scene
-    {
-        MainScene,
-        LobbyScene,
-        LoadingScene
-    }
     private static Scene targetScene;
 
     public static void Load(Scene scene){

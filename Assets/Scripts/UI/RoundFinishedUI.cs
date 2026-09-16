@@ -1,4 +1,3 @@
-using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,30 +14,13 @@ public class RoundFinishedUI : MonoBehaviour
             GameManager.Instance.RequestStartNextHandServerRpc();
         });
     }
-    private void Start()
-    {
-        Hide();
-        GameClientManager.Instance.ShowEndRoundText += GCM_ShowEndRoundText;
-        GameClientManager.Instance.ShowMainRoundButtons += GCM_OnRoundStarted;
-    }
 
-    private void GCM_OnRoundStarted(object sender, EventArgs e)
+    public void Setup(bool shuffleDeck)
     {
-        Hide();
-    }
-
-    private void GCM_ShowEndRoundText(object sender, OnRoundFinishedArgs e)
-    {
+        SuffleDeck.gameObject.SetActive(shuffleDeck);
         Show();
-        if (e.shuffleDeck) { SuffleDeck.gameObject.SetActive(true); }
-        else { SuffleDeck.gameObject.SetActive(false); }
     }
-    private void Hide()
-    {
-        gameObject.SetActive(false);
-    }
-    private void Show()
-    {
-        gameObject.SetActive(true);
-    }
+
+    public void Hide() => gameObject.SetActive(false);
+    public void Show() => gameObject.SetActive(true);
 }

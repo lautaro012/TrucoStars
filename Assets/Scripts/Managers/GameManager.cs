@@ -3,10 +3,6 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using System.Linq;
-public class OnWaitingConfirmationArgs : EventArgs
-{
-    public bool isStageEnded;
-}
 public class OnSentEnvidoArgs : EventArgs
 {
     public int value;
@@ -15,75 +11,19 @@ public class OnPointsGainedArgs : EventArgs
 {
     public int points;
 }
-public class OnRoundFinishedArgs : EventArgs {
-    public bool shuffleDeck;   
-}
-public class OnTeamTrucoCall : EventArgs
-{
-    public int team;
-    public TrucoStage trucostage;
-}
-public class OnTeamEnvidoCall : EventArgs {
-    public int team;
-    public EnvidoStage envidoStage;
-}
 public class OnTeamWinnerArgs : EventArgs {
     public int winnerTeam;
 }
-public class CardClickedEventArgs : EventArgs {
-    public int cardIndex;
-}
 
-public struct PlayedCard{
-    public ulong playerID;
-    public CardSO CardSO;
-}
-public enum RoundState {
-    None,
-    RoundStarted,
-    RoundFinished
-}
-public enum TrucoStage
-{
-    None,
-    Truco,
-    Retruco,
-    Vale4
-}
-public enum EnvidoStage
-{
-    None,
-    Envido,
-    EnvidoEnvido,
-    RealEnvido,
-    FaltaEnvido
-}
+
 public class GameManager : NetworkBehaviour
 {
-    [Header("Valores asociados a la partida")]
-    [SerializeField] private int totalPlayers;
-
-    [Header("Helpers")]
-    [SerializeField] private SeatLayoutManager seatLayoutManager;
-    [SerializeField] private TablePlayAreaManager tablePlayAreaManager;
-    [SerializeField] private ScoringLogic scoringLogic = new ScoringLogic();
-    
-    [Header("Deck y Mesa")]
-    [SerializeField] private DeckSO deckSO;
-    [SerializeField] private Table table;
-
-    [Header("VALORES PARA EL INICIO DEL JUEGO")]
-    [SerializeField] private int center = 1;
-    [SerializeField] private float radius = 1.5f;
-    [SerializeField] private int heightY = -90;
-
-    //? REGLAS DEL JUEGO, MOMENTANEAS PARA DEBUG
-    private int pointsToWin = 15;
-    private bool conFlor = false;
-    private bool conPicaPica = false;
-
-
-    //? Data del jugador, incluye index de Asiento, ClientID, equipo y cartas actuales en mano 
+    #region 1 Eventos y Estructuras Playerdata, PlayerSnapshots
+    //? --- EVENTOS --- //
+    public event EventHandler<OnPointsGainedArgs> OnTeam1PointsChanged;
+    public event EventHandler<OnPointsGainedArgs> OnTeam2PointsChanged;
+    public event EventHandler<OnTeamWinnerArgs> OnRoundWined;
+    public event EventHandler<OnTeamWinnerArgs> OnGameFinished;
     public struct PlayerData : INetworkSerializable
     {
         public int seatIndex;
@@ -113,70 +53,85 @@ public class GameManager : NetworkBehaviour
             s.SerializeValue(ref team);
         }
     }
+    #endregion
+
+    [Header("Valores asociados a la partida")]
+    [SerializeField] private int totalPlayers;
+
+    [Header("Helpers")]
+    [SerializeField] private SeatLayoutManager seatLayoutManager;
+    [SerializeField] private TablePlayAreaManager tablePlayAreaManager;
+
+    [Header("Deck y Mesa")]
+    [SerializeField] private DeckSO deckSO;
+    [SerializeField] private Table table;
+
+    [Header("VALORES PARA EL INICIO DEL JUEGO")]
+    [SerializeField] private int center = 1;
+    [SerializeField] private float radius = 1.5f;
+    [SerializeField] private int heightY = -90;    
+
+    #region VARIABLES 
+    public struct GameContext : INetworkSerializable, IEquatable<GameContext>
+    {
+        public int trucoCallerTeam;
+        public TrucoStage trucoStage;
+        public int envidoCallerTeam;
+        public EnvidoStage envidoStage;
+        public int CurrentRound;
+        public int dealerSeatIdx;
+        public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
+        {
+            s.SerializeValue(ref trucoCallerTeam);
+            s.SerializeValue(ref trucoStage);
+            s.SerializeValue(ref envidoCallerTeam);
+            s.SerializeValue(ref envidoStage);
+            s.SerializeValue(ref CurrentRound);
+            s.SerializeValue(ref dealerSeatIdx);
+        }
+
+        public bool Equals(GameContext other)
+        {
+            return trucoCallerTeam == other.trucoCallerTeam &&
+                trucoStage == other.trucoStage &&
+                envidoCallerTeam == other.envidoCallerTeam &&
+                envidoStage == other.envidoStage &&
+                CurrentRound == other.CurrentRound &&
+                dealerSeatIdx == other.dealerSeatIdx;
+        }
+    }
 
     //? VARIABLES PARA DEFINIR POSICIONES
     private Dictionary<int, PlayerData> Seats;
     private Dictionary<int, SeatController> Seats_index;
     private Dictionary<ulong, int> clientsId_Seats;
     private Dictionary<int, PlaySlotView> playSlots_Seats;
-    private Dictionary<int, int> envidoValue_Seats;
     private int[] LastSeats;
-
-
-    //? --- EVENTOS --- //
-    public event EventHandler AreAllPlayersConnected;
-    public event EventHandler OnRoundStarted;
-    public event EventHandler<OnRoundFinishedArgs> OnRoundFinished;
-    public event EventHandler<OnTeamEnvidoCall> OnSomeoneCalledEnvido;
-    public event EventHandler<OnTeamTrucoCall> OnSomeoneCalledTruco;
-    public event EventHandler<OnWaitingConfirmationArgs> OnWaitingTrucoConfirmation;
-    public event EventHandler<OnWaitingConfirmationArgs> OnWaitingEnvidoConfirmation;
-    public event EventHandler<OnPointsGainedArgs> OnTeam1PointsChanged;
-    public event EventHandler<OnPointsGainedArgs> OnTeam2PointsChanged;
-    public event EventHandler<OnTeamWinnerArgs> OnRoundWined;
-
-    public event EventHandler<OnTeamWinnerArgs> OnGameFinished;
-
-
-    public enum GameState
-    {
-        None,                 // Esperando que se conecten los jugadores
-        SetupHand,            // Repartiendo cartas y calculando envidos ocultos
-        PlayingTurn,          // Estado normal: Esperando que un jugador tire carta o cante
-        WaitingEnvido,        // JUEGO PAUSADO: Alguien cantó Envido
-        WaitingTruco,         // JUEGO PAUSADO: Alguien cantó Truco
-        RoundFinished,        // Terminó una de las 3 rondas (se decide quién gana)
-        HandFinished          // Terminó la mano completa (se suman puntos al score)
-    }
-
     //? --- NETWORK VARIABLES --- */
-
+    public NetworkVariable<int> currentTurnSeatIndex = new NetworkVariable<int>(-1);
+    public NetworkVariable<GameState> currentGameState = new NetworkVariable<GameState>(GameState.None);
     private NetworkVariable<int> Team1Points = new(0);
     private NetworkVariable<int> Team2Points = new(0);
-    public NetworkVariable<bool> roundFinished = new(false);
-    private NetworkVariable<RoundState> currentPhase = new(RoundState.None);
-
-    //? VARIABLES DE JUEGO */
-    private bool GameStarted = false;
-    private bool isFirstTurn = true;
     private int playersReady = 0;
-
-    //? variables para las manos
-    private int firstToPlay = 0; // El índice del jugador que reparte/empieza
-    private Hand currentHand;
-    private int handCount = 0;
-    //? VARIABLES DE ENVIDO
-    private int TeamThatCalledEnvido = -1;
-    private bool waitingEnvidoConfirmation = false;
-
-    //? VARIABLES DE TRUCO
-    private int TeamThatCalledTruco = -1;
-    private bool waitingTrucoConfirmation = false;
+    //? Reglas y contexto de juego
+    private GameRulesBase currentRules;
+    public NetworkVariable<GameContext> currentContext = new(new GameContext 
+    { 
+        trucoCallerTeam = -1, 
+        envidoCallerTeam = -1,
+        trucoStage = TrucoStage.None,
+        envidoStage = EnvidoStage.None
+    });
 
     public static GameManager Instance { get; private set; }
+    #endregion
 
-
-    //? --- UNITY METHODS --- */
+    //? REGLAS DEL JUEGO, MOMENTANEAS PARA DEBUG
+    private int pointsToWin = 4;
+    private bool conFlor = false;
+    private bool conPicaPica = false;
+    
+    #region UNITY FUNCTIONS
     private void Awake()
     {
         Instance = Instance != null ? Instance : this;
@@ -184,7 +139,7 @@ public class GameManager : NetworkBehaviour
         Seats = new Dictionary<int, PlayerData>();
         Seats_index = new Dictionary<int, SeatController>();
         playSlots_Seats = new Dictionary<int, PlaySlotView>();
-        envidoValue_Seats = new();
+        //envidoValue_Seats = new();
         seatLayoutManager.OnSeatCreated += SeatLayoutManager_OnSeatCreated;
         tablePlayAreaManager.OnSlotsLaidOut += TablePlayAreaManager_OnSlotLaidOut;
         LastSeats = new int[2];
@@ -193,55 +148,89 @@ public class GameManager : NetworkBehaviour
     private void Update()
     {
         if (!IsServer || NetworkManager.Singleton == null) return;
-        if (NetworkManager.Singleton.ConnectedClients.Count == totalPlayers && currentPhase.Value == RoundState.None)
+        if (NetworkManager.Singleton.ConnectedClients.Count == totalPlayers && currentGameState.Value == GameState.None)
         {
-            GameStarted = true;
             StartGame();
         }
     }
     public override void OnNetworkSpawn()
     {
-        currentPhase.OnValueChanged += RoundState_OnValueChanged;
         Team1Points.OnValueChanged += Team1Points_OnValueChanged;
         Team2Points.OnValueChanged += Team2Points_OnValueChanged;
-        roundFinished.OnValueChanged += RoundFinished_OnValueChanged;
-
-        //! ESTAS REGLAS DEBERAN CONSEGUIRSE DESDE EL LOBBY SCENE
-        if (IsServer) 
+        currentGameState.OnValueChanged += GameState_OnValueChanged;
+        currentRules = new PuntaYHachaRules(this, pointsToWin,true);
+    }
+    #endregion
+    
+    private void GameState_OnValueChanged(GameState previousValue, GameState newValue)
+    {
+        if (IsServer)
         {
-            scoringLogic.ApplyLobbySettings(
-                pointsToWin,
-                conFlor,
-                conPicaPica
-            );
+            switch (newValue)
+            {
+                case GameState.SetupHand:
+                    if (previousValue == GameState.None)
+                    {
+                    }
+                    break;
+                case GameState.PlayingTurn:
+                    if (previousValue == GameState.SetupHand)
+                    {
+                    }
+                    break;
+
+                case GameState.RoundFinished:
+                    break;
+                case GameState.HandFinished:
+                    break;
+            }
         }
-        
     }
-
-
-    //? EVENTOS LOCALES
-    private void SeatLayoutManager_OnSeatCreated(object sender, SeatCreatedEventArgs e)
-    {
-        Seats_index[e.SeatIndex] = e.Seat;
-    }
-    private void TablePlayAreaManager_OnSlotLaidOut(object sender, OnSlotsLaidOutArgs e)
-    {
-        playSlots_Seats = e.PlayAreaBySeatIndex;
-    }
-
-
 
     //? Empieza el juego, Asigna los asientos, Baraja las cartas y Create lo asienots y los jugadores
     private void StartGame()
     {
         if (!IsServer) return;
-        currentPhase.Value = RoundState.RoundStarted;
-        roundFinished.Value = false;
+        SetCurrentGameState(GameState.SetupHand);
         AssignSeats();
-        DrawCards();
         CreateSeatsAndPlayAreaClientRpc(totalPlayers, Vector3.zero, radius, heightY, 0f);
     }
 
+    #region PUENTES DE CONTEXTOS
+    public void Bridge_StartHandVisuals(int[] ruleLastSeats, Dictionary<int, int[]> ruleCardsInHands, Dictionary<int, int> ruleEnvidoValues)
+    {
+        this.LastSeats = ruleLastSeats;
+        ShowDeckClientRpc(ruleLastSeats);
+
+        for (int i = 0; i < totalPlayers; i++)
+        {
+            int[] cards = ruleCardsInHands[i];
+            int envidoPts = ruleEnvidoValues[i];
+            ulong clientId = Seats[i].clientId;
+            CreateCardsClientRpc(envidoPts, cards, i, GetRpcTargetParams(clientId));
+        }
+    }
+    public void Bridge_MoveCardToTable(int cardIndex, int clientSeat, int cardId)
+    {
+        MoveCardToTableClientRpc(cardIndex, clientSeat, cardId);
+    }
+
+    public void Bridge_AnnounceRoundWinner(int winnerTeam)
+    {
+        AnnounceRoundWinnerClientRpc(winnerTeam);
+    }
+
+    public void Bridge_CalculatePoints(int winnerTeam, int points)
+    {
+        if (winnerTeam == 1) Team1Points.Value += points;
+        else if (winnerTeam == 2) Team2Points.Value += points;
+    }
+    public void Bridge_FinishGame(int winnerTeam)
+    {
+        SetCurrentGameState(GameState.HandFinished);
+        FinishGameClientRpc(winnerTeam);
+    }
+    #endregion
     //? ClientRPC que manda a crear a todos los jugadores sus asientos y donde van a jugar las cartas en la mesa 
     [Rpc(SendTo.Everyone)]
     public void CreateSeatsAndPlayAreaClientRpc(int totalPlayers, Vector3 center, float radius, float heightY, float angleOffsetDeg = 0f)
@@ -285,46 +274,6 @@ public class GameManager : NetworkBehaviour
     }
     
     /// <summary>
-    /// CALCULA UN ARREGLO DE CARTAS UNICO Y ALEATORIO Y ASIGNA 3 CARTAS A CADA JUGADOR. CALCULANDO SU ENVIDOVALUE EN EL PROCESO
-    /// </summary>
-    private void DrawCards()
-    {
-        // Obtengo los IDs de las cartas a jugar
-        int[] cardsToPlay = GetPlayingCardsIds();
-        if (cardsToPlay == null || cardsToPlay.Length < totalPlayers * 3)
-        {
-            Debug.LogError("Error: No se pudieron obtener las cartas únicas.");
-            return;
-        }
-        for (int i = 0; i < cardsToPlay.Length; i++)
-        {
-            int seatIndex = i % totalPlayers; // Asignar asiento de 0 a 3
-            Seats[seatIndex].cardsInHands[i / totalPlayers] = cardsToPlay[i]; // Asignar la carta al array de cartas en mano
-        }
-        foreach (var kvp in Seats)
-        {
-            CardSO firstCard = getCardSOfromCardIndex(kvp.Value.cardsInHands[0]);
-            CardSO secondCard = getCardSOfromCardIndex(kvp.Value.cardsInHands[1]);
-            CardSO thirdCard = getCardSOfromCardIndex(kvp.Value.cardsInHands[2]);
-            int EnvidoValue = scoringLogic.CalculateEnvidoValue(firstCard, secondCard,thirdCard);
-            envidoValue_Seats[kvp.Key] = EnvidoValue;
-        }
-    }
-    private int[] GetPlayingCardsIds()
-    {
-        HashSet<int> cardIDs = new();
-        System.Random rng = new();
-
-        while (cardIDs.Count < totalPlayers * 3)
-        {
-            cardIDs.Add(rng.Next(0, 40));
-        }
-
-        return cardIDs.ToArray();
-    }
-
-
-    /// <summary>
     /// SERVERRPC QUE SE LLAMA CUANDO SE TERMINA DE CREAR EL LAYOUT DEL JUEGO. CUANDO CADA JUGADOR TERMINA SU LAYOUT SE CREAN LAS MANOS
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -342,13 +291,11 @@ public class GameManager : NetworkBehaviour
     private void CreatePlayerHandsServerRpc()
     {
         SetPlayersDataClientRPC(Seats.Values.ToArray());
-        StartNewHand();
-        for (int i = 0; i < totalPlayers; i++)
-        {
-            int[] cards = Seats[i].cardsInHands;            
-            CreateCardsClientRpc(envidoValue_Seats[i], cards, Seats[i].seatIndex, GetRpcTargetParams(new[] { Seats[i].clientId }));
-        }
+        currentRules = new PuntaYHachaRules(this, pointsToWin,true);
+        currentRules.StartHand();
+        
         DealAnimationClientRpc(LastSeats[0]);
+        SetCurrentGameState(GameState.PlayingTurn);
     }
 
 
@@ -400,32 +347,11 @@ public class GameManager : NetworkBehaviour
         });
     }
 
-    /// <summary> 
-    ///CREA LA MANO, AUMENTA EL CONTADOR DE MANOS Y SETEA EL PROXIMO EN JUGAR
-    /// </summary>
-    private void StartNewHand() 
-    {
-        currentHand = new Hand(handCount, firstToPlay, totalPlayers);
-        
-        firstToPlay = (firstToPlay + 1) % totalPlayers; 
-        handCount++; 
-
-        int lastSeat = (firstToPlay + totalPlayers - 1) % totalPlayers;
-        int lastSeat2 = (firstToPlay + totalPlayers - 2) % totalPlayers;
-        
-        LastSeats[0] = lastSeat;
-        LastSeats[1] = lastSeat2;
-
-        ShowDeckClientRpc(LastSeats);
-
-        int initialTurn = currentHand.GetStartingSeatThisHand(); 
-        TurnManager.Instance.AdvanceTurn(initialTurn); 
-    }
-
 
     [Rpc(SendTo.Everyone)]
     private void ShowDeckClientRpc(int[] lastSeats)
     {
+        LastSeats = lastSeats;
         PlaySlotView LastplaySlot = playSlots_Seats[lastSeats[0]];
         PlaySlotView previousLastPlaySlot = playSlots_Seats[lastSeats[1]];
         LastplaySlot.LastTurn(true);
@@ -437,36 +363,26 @@ public class GameManager : NetworkBehaviour
     /// NUEVA: APAGA LAS CARTAS DE CADA JUGADOR, EMPIEZA LA NUEVA MANO, DISPARA LA ANIMACION DE REPARTIR Y MUESTRA LAS CARTAS
     /// </summary>
     /// <param name="rpc"></param>
+    /// [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void RequestStartNextHandServerRpc(RpcParams rpc = default)
     {
-        if (!roundFinished.Value)
+        if (currentGameState.Value != GameState.RoundFinished && currentGameState.Value != GameState.HandFinished)
         {
-            Debug.Log("NO TERMINO LA RONDA TODAVIA " + roundFinished.Value);
+            Debug.LogWarning("NO TERMINO LA RONDA TODAVIA " + currentGameState.Value);
             return;
         }
+        
+        SetCurrentGameState(GameState.SetupHand);
 
-        // 1. Apagamos todas las manos y limpiamos la mesa de todos los jugadores
         for (int i = 0; i < totalPlayers; i++)
         {
              ClearTableAndHideHandsClientRpc(Seats[i].seatIndex);
         }
 
-        StartNewHand();
-        roundFinished.Value = false;
-        
-        // 2. Calculamos las cartas matemáticamente
-        DrawCards();
-
-        // 3. Avisamos a los clientes qué cartas les tocaron en memoria
-        for (int i = 0; i < totalPlayers; i++)
-        {
-            int[] cards = Seats[i].cardsInHands;
-            CreateCardsClientRpc(envidoValue_Seats[i], cards, Seats[i].seatIndex, GetRpcTargetParams(new[] { Seats[i].clientId }));
-        }
-
-        // 4. ¡Disparamos la ilusión visual! (LastSeats[0] es el dealer)
+        currentRules.StartHand();
         DealAnimationClientRpc(LastSeats[0]);
+        SetCurrentGameState(GameState.PlayingTurn);
     }
 
     /// <summary>
@@ -485,7 +401,7 @@ public class GameManager : NetworkBehaviour
     /// Ejecuta la animación y LUEGO enciende las manos
     /// </summary>
     /// <param name="dealerSeat"></param>
-[Rpc(SendTo.Everyone)]
+    [Rpc(SendTo.Everyone)]
     private void DealAnimationClientRpc(int dealerSeat)
     {
         PlaySlotView dealerSlot = playSlots_Seats[dealerSeat];
@@ -508,40 +424,6 @@ public class GameManager : NetworkBehaviour
     }
     //? --- FUNCIONES DE CAMBIOS DE VALORES --- */
 
-
-
-    //* ----- FUNCIONES QUE SE LLAMAN CUANDO NETWORK VARIABLES CAMBIAN -----
-    private void RoundFinished_OnValueChanged(bool previousValue, bool newValue)
-    {
-        if (!IsServer) return;
-
-        if (newValue)
-        {
-            int dealerSeat = firstToPlay;
-            Debug.Log("first to play: " + firstToPlay);
-            CallRoundFinishedEventClientRpc(dealerSeat);
-        }
-        else
-        {
-            RoundStartedCallClientRpc();
-        }
-    }
-
-
-    //? lE AVISA A CADA CLIENTE QUE LA RONDA TERMINO
-    [Rpc(SendTo.Everyone)]
-    private void CallRoundFinishedEventClientRpc(int dealerSeat)
-    {
-        int mySeat = GameClientManager.Instance.GetLocalSeat();
-        bool shuffleDeck = (mySeat == dealerSeat);
-        OnRoundFinished?.Invoke(this, new OnRoundFinishedArgs { shuffleDeck = shuffleDeck });
-    }
-    [Rpc(SendTo.Everyone)]
-    private void RoundStartedCallClientRpc()
-    {
-        OnRoundStarted?.Invoke(this, EventArgs.Empty);
-    }
-
     private void Team2Points_OnValueChanged(int previousValue, int newValue)
     {
         OnTeam2PointsChanged?.Invoke(this, new OnPointsGainedArgs { points = newValue });
@@ -550,17 +432,6 @@ public class GameManager : NetworkBehaviour
     {
         OnTeam1PointsChanged?.Invoke(this, new OnPointsGainedArgs { points = newValue });
     }
-    private void RoundState_OnValueChanged(RoundState previousValue, RoundState newValue)
-    {
-        if (previousValue == RoundState.None)
-        {
-            AreAllPlayersConnected?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-
-
-
 
     /// <summary>
     /// Le pide permiso al servidor para jugar una carta. Toma el index de la carta y el clientID del jugador por Params
@@ -570,109 +441,56 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void ClickOnCardServerRpc(int cardParentIndex, RpcParams rpc = default) 
     {
-        if (waitingEnvidoConfirmation || waitingTrucoConfirmation)
-        {
-            Debug.LogWarning("NO PUEDES CLICKEAR SI ESTAS ESPERANDO CONFIRMACION");
-            return;
-        }
-        if (roundFinished.Value)
-        {
-            Debug.Log("RONDA TERMINADA");
-            return;
-        }
+        switch (currentGameState.Value)
+            {
+                case GameState.WaitingEnvido:
+                case GameState.WaitingTruco:
+                    Debug.LogWarning("NO SE PUEDE CLICKEAR CARTAS: Hay un canto pendiente.");
+                    return;
+                    
+                case GameState.None:
+                case GameState.SetupHand:
+                case GameState.RoundFinished:
+                case GameState.HandFinished:
+                    Debug.LogWarning("NO SE PUEDE CLICKEAR CARTAS: No estamos en fase de juego.");
+                    return;
+                    
+                case GameState.PlayingTurn:
+                    // Todo bien, dejamos que el código siga hacia abajo
+                    break; 
+            }
         ResolveClickedCard(cardParentIndex, rpc);
-        CardInPlayClientRpc();
-    }
-
-
-    [Rpc(SendTo.Everyone)]
-    private void CardInPlayClientRpc()
-    {
-        //! FUNCION PARA ANUNCIAR CARTA EN JUEGO
     }
 
     //? FUNCION QUE RESUELVE SI LA CARTA PUEDE SER JUGADA POR EL JUGADOR. Y HACE LO CHEQUEOS DE RONDAS
     private void ResolveClickedCard(int cardParentIndex, RpcParams rpc = default)
     {
-        ulong sender = rpc.Receive.SenderClientId;
-        int clientSeat = GetSeatIndexFromClientId(sender);
 
-        //! --- VALIDACIONES ---
-        if (clientSeat < 0) return; //? ClientSeat error
-        if (!TurnManager.Instance.IsSeatIndexTurn(clientSeat))
-        {
-            Debug.LogWarning("No es tu turno");
-            return;
-        }
-        if (cardParentIndex < 0 || cardParentIndex >= Seats[clientSeat].cardsInHands.Length) return; //? ParentCardId Error
-
-        int cardId = Seats[clientSeat].cardsInHands[cardParentIndex];
-        if (cardId < 0)
-        {
-            Debug.LogWarning("Carta inválida o ya jugada en ese slot.");
-            return;
-        }
-
-        if (waitingEnvidoConfirmation || waitingTrucoConfirmation)
+        if (currentGameState.Value == GameState.WaitingEnvido || currentGameState.Value == GameState.WaitingTruco )
         {
             Debug.LogWarning("No puedes jugar mientras hay confirmación pendiente.");
             return;
         }
 
+        ulong sender = rpc.Receive.SenderClientId;
+        int clientSeat = GetSeatIndexFromClientId(sender);
 
-
-        //?  --- GUARDADO DE LA CARTA Y CAMBIOS DE UI ---
-
-        Round round = currentHand.CurrentRound;
-        bool cardPlayedCorrectly = round.TryPlay(clientSeat, cardId); //? Se intenta jugar la carta en la ronda
-        if (!cardPlayedCorrectly)
+        if (clientSeat < 0) return; //? ClientSeat error
+        if (currentTurnSeatIndex.Value != clientSeat)
         {
-            Debug.LogError("------ERROR JUGANDO CARTA EN RONDA " + currentHand.GetCurrentRoundIndex() + " --------");
+            Debug.LogWarning("No es tu turno. Turno: " + currentTurnSeatIndex.Value + " y asiento actual: " + clientSeat);
             return;
         }
-        MoveCardToTableClientRpc(cardParentIndex, clientSeat, cardId); //? MODIFICAR UI
-        Seats[clientSeat].cardsInHands[cardParentIndex] = -1; //? SE QUITA LA CARTA JUGADA
-
-        //? --- CHEQUEO: LA RONDA NO TERMINO? ? PASO TURNO : RESUELVO LA RONDA
-        if (!round.IsComplete())
+        if (cardParentIndex < 0 || cardParentIndex >= Seats[clientSeat].cardsInHands.Length) return; //? ParentCardId Error
+        
+        int cardId = currentRules.GetCardId(clientSeat, cardParentIndex); 
+        if (cardId < 0)
         {
-            TurnManager.Instance.AdvanceTurn(-1);
+            Debug.LogWarning("Carta inválida o ya jugada en ese slot.");
             return;
         }
-
-        //?----- JUGARON TODOS LOS ASIENTOS -------    
-        //Debug.Log("-------------------------------------------------------------------");
-        //Debug.Log("--- SE JUGARON TODAS LAS CARTAS DE LA RONDA. CALCULANDO GANADOR DE LA RONDA " + currentHand.GetCurrentRoundIndex() + " ---");
-
-        //?----- JUGARON TODOS LOS ASIENTOS -------    
-
-        // Le pasamos las cartas, y dos funciones (Lambdas) que obtienen el valor y el equipo.
-        int winnerSeat = scoringLogic.ResolveRound(
-            round.SnapshotCards(),
-            (cardId) => getCardSOfromCardIndex(cardId).cardValue, 
-            (seatIndex) => Seats[seatIndex].team                      
-        );
-
-        int winnerTeam = (winnerSeat == -1) ? -1 : Seats[winnerSeat].team;
-
-        currentHand.RegisterRoundWinner(winnerSeat, winnerTeam); //? SE GUARDAN Y ANUNCIAN GANADORES DE LA RONDA ACTUAL Y CIERRA LA MANO
-        AnnounceRoundWinnerClientRpc(winnerTeam);
-
-        //? CHEQUEO: LA MANO NO CERRO ? ANUNCIO NUEVA RONDA : ANUNCIO GANADOR
-        if (!currentHand.IsHandClosed())
-        {
-            int nextLeader = (winnerSeat >= 0) ? winnerSeat : round.GetLeaderSeat();
-            AnnounceNextRound(nextLeader);
-            return;
-        }
-
-        //? FLAG DE QUE TERMINO LA RONDA
-        roundFinished.Value = true;
-        int HandWinner = currentHand.CalculateWinner();
-        CalculatePoints(HandWinner);
-        RestartDefaultValues();
+        currentRules.ProcessCardPlayed(clientSeat, cardId, cardParentIndex);
     }
-
     [Rpc(SendTo.Everyone)]
     private void AnnounceRoundWinnerClientRpc(int winnerTeam)
     {
@@ -689,30 +507,6 @@ public class GameManager : NetworkBehaviour
         playSlot.PlayThisCard(cardId, origin);
     }
 
-
-    private void AnnounceNextRound(int nextLeader)
-    {
-        TurnManager.Instance.NextRoundLeaderSeatIndex = nextLeader;
-
-        StartNextRound(nextLeader);
-        TurnManager.Instance.AdvanceTurn(nextLeader);
-    }
-    private void StartNextRound(int nextLeader)
-    {
-        int nextIndex = currentHand.NextCurrentRoundIndex();  //? AVANZA DE RONDA Y CIERRA LA MANO SI ESTAMOS EN LA ULTIMA
-        currentHand.Rounds.Add(new Round(
-            roundIndex: nextIndex,
-            leaderSeat: nextLeader,
-            totalPlayers: totalPlayers
-        ));
-        // NextRoundStartedClientRpc()
-    }
-    [Rpc(SendTo.Everyone)]
-    private void NextRoundStartedClientRpc()
-    {
-        //TODO AGREGAR PUNTOS ROJOS EN EL MARCADOR DE RONDAS 
-    }
-
     /// <summary>
     /// SE LLAMA CUANDO El EQUIPO CONTRARIO ACEPTA O RECHAZA EL TRUCO.
     /// </summary>
@@ -724,39 +518,17 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void TrucoConfirmationServerRpc(bool accepted, RpcParams rpc = default)
     {
-        if (waitingTrucoConfirmation == false)
+        if (currentGameState.Value != GameState.WaitingTruco)
         {
             Debug.Log("[ERROR] No puedes confirmar el Truco en este momento.");
             return;
         }
-        if (accepted)
-        {
-            // Aceptaron el Truco
-            scoringLogic.TrucoAccepted();
-            Debug.Log($"¡Truco aceptado! Ahora se juega por {scoringLogic.GetPointsInPlay()} puntos.");
-        }
-        else
-        {
-            // Rechazaron el Truco
-            ulong surrenderSenderId = rpc.Receive.SenderClientId;
-            DeclareTeamWinnerBySurrender(surrenderSenderId);
-        }
-        // Resetear valores
-        waitingTrucoConfirmation = false;
-        //? AVISAR A LOS CLIENTES QUE SE ACEPTO O RECHAZO EL TRUCO
-        TrucoConfirmationClientRpc();
-    }
+        ulong sender = rpc.Receive.SenderClientId;
+        int senderId = GetSeatIndexFromClientId(sender);
 
-    //? CLIENTRP QUE LE AVISA A LOS JUGADORES QUE LA CONFIRMACION FINALIZO PARA SEGUIR JUGANDO
-    [Rpc(SendTo.Everyone)]
-    private void TrucoConfirmationClientRpc()
-    {
-        OnWaitingTrucoConfirmation?.Invoke(this, new OnWaitingConfirmationArgs
-        {
-            isStageEnded = true
-        });
+        currentRules.ProcessTrucoConfirmation(senderId,accepted);
     }
-
+    
     /// <summary>
     /// Le hace saber al servidor que jugador canto truco e inicia la fase de confirmacion
     /// </summary>
@@ -767,50 +539,16 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void TrucoServerRpc(RpcParams rpc = default)
     {
-        if (roundFinished.Value || waitingTrucoConfirmation || scoringLogic.trucoStage == TrucoStage.Vale4)
-        {
-            Debug.LogWarning("NO SE PUEDE CANTAR TRUCO, round finished: " + roundFinished.Value + ", waitingconfirmation: " + waitingTrucoConfirmation + ", trucoStage: " + scoringLogic.trucoStage);
-            return;
-        }
         ulong sender = rpc.Receive.SenderClientId;
         int senderSeat = GetSeatIndexFromClientId(sender);
         int callerTeam = Seats[senderSeat].team;
-
-        if (TeamThatCalledTruco == callerTeam)
+        if (currentContext.Value.trucoCallerTeam == callerTeam)
         {
             Debug.Log("[ERROR] No puedes cantar Truco dos veces seguidas.");
             return;
         }
-        TeamThatCalledTruco = callerTeam;
-        waitingTrucoConfirmation = true;
-        scoringLogic.NextTrucoStage();
-        List<ulong> targetClients = new List<ulong>();
-        foreach (var kvp in Seats)
-        {
-            if (kvp.Value.team != callerTeam)
-            {
-                targetClients.Add(kvp.Value.clientId);
-            }
-        }
-        SendTrucoToOpponentClientRpc(callerTeam, scoringLogic.trucoStage, GetRpcTargetParams(targetClients.ToArray()));
-        StartTrucoConfirmationClientRpc();
-    }
-
-    //? LE AVISA A LOS OPONENTES QUE LES CANTARON TRUCO
-    [Rpc(SendTo.SpecifiedInParams)]
-    private void SendTrucoToOpponentClientRpc(int callerTeam, TrucoStage trucoStage, RpcParams rpcParams = default)
-    {
-        OnSomeoneCalledTruco?.Invoke(this, new OnTeamTrucoCall { team = callerTeam, trucostage = trucoStage });
-    }
-
-    //? INICIA LA FASE DE CONFIRMACION DE TRUCO EN GENERAL
-    [Rpc(SendTo.Everyone)]
-    private void StartTrucoConfirmationClientRpc()
-    {
-        OnWaitingTrucoConfirmation?.Invoke(this, new OnWaitingConfirmationArgs
-        {
-            isStageEnded = false
-        });
+        
+        currentRules.ProcessTrucoCall(senderSeat,callerTeam);
     }
 
     /// <summary>
@@ -824,75 +562,21 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void EnvidoServerRpc(EnvidoStage call, RpcParams rpc = default)
     {
-        if (roundFinished.Value || waitingEnvidoConfirmation || scoringLogic.envidoStage == EnvidoStage.FaltaEnvido)
+        if (currentGameState.Value != GameState.PlayingTurn && currentGameState.Value != GameState.WaitingEnvido)
         {
-            Debug.LogWarning("NO SE PUEDE CANTAR Envido, round finished: " + roundFinished.Value + ", waitingconfirmation: " + waitingEnvidoConfirmation + ", envidoStage: " + scoringLogic.envidoStage);
-            return;
-        }
-        if (scoringLogic.envidoStage == EnvidoStage.RealEnvido || scoringLogic.envidoStage == EnvidoStage.FaltaEnvido && call == EnvidoStage.Envido)
-        {
-            Debug.LogWarning("NO SE PUEDE CANTAR ENVIDO SI LA APUESTA YA ESTA SUBIDA. stage: " + scoringLogic.envidoStage + " y call: " + call);
+            Debug.LogWarning("NO SE PUEDE CANTAR Envido, estado actual: " + currentGameState.Value);
             return;
         }
 
-        //? Tomo el receptor del call
         ulong sender = rpc.Receive.SenderClientId;
         int senderSeat = GetSeatIndexFromClientId(sender);
-        bool isLast = senderSeat == LastSeats[0] || senderSeat == LastSeats[1];
-        if (!isLast)
-        {
-            Debug.LogWarning("SOLOS LOS ASIENTOS: " + LastSeats[0] + " y " + LastSeats[1] + " pueden cantar envido. vos sos " + senderSeat);
-            return;
-        }
-        scoringLogic.EnvidoCalled();
         int callerTeam = Seats[senderSeat].team;
-        waitingEnvidoConfirmation = true;
-        TeamThatCalledEnvido = callerTeam;
-        scoringLogic.NextEnvidoStage(call);
-        List<ulong> targetClients = new();
-        foreach (var kvp in Seats)
-        {
-            if (kvp.Value.team != callerTeam)
-            {
-                targetClients.Add(kvp.Value.clientId);
-            }
-        }
-        SendEnvidoToOpponentClientRpc(callerTeam, scoringLogic.envidoStage, GetRpcTargetParams(targetClients.ToArray()));
-        StartEnvidoStageClientRpc();
+
+        currentRules.ProcessEnvidoCall(call,senderSeat,callerTeam);
     }
 
-    //? les avisa a los oponentes que el rival canto envido
-    [Rpc(SendTo.SpecifiedInParams)]
-    private void SendEnvidoToOpponentClientRpc(int callerTeam, EnvidoStage envidoStage, RpcParams RpcParams = default)
-    {
-        OnSomeoneCalledEnvido?.Invoke(this, new OnTeamEnvidoCall { team = callerTeam, envidoStage = envidoStage });
-    }
-
-
-    //? EMPIEZA LA FASE DE CONFIRMACION DE ENVIDO
-    [Rpc(SendTo.Everyone)]
-    private void StartEnvidoStageClientRpc()
-    {
-        OnWaitingEnvidoConfirmation?.Invoke(this,new OnWaitingConfirmationArgs
-        {
-            isStageEnded= false,
-        });
-    }
     /// <summary>
-    /// SE LLAMA CUANDO EL EQUIPO SUBE LA APUESTA DEL ENVIDO. RECIBE EL ENVIDOSTAGE LLAMADO, NO CONFUNDIR CON EnvidoConfirmation()
-    /// </summary>
-    /// <param name="call"></param>
-    public void RaiseEnvido(EnvidoStage call) { RaiseEnvidoServerRpc(call); }
-
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    private void RaiseEnvidoServerRpc(EnvidoStage call)
-    {
-        waitingEnvidoConfirmation = false;
-        EnvidoServerRpc(call);
-    }
-    
-    /// <summary>
-    /// CONFIRMA SI EL EQUIPO AL QUE SE LE CANTO ENVIDO ACEPTA O NO ACEPTA EL ENVIDO, NO CONFUNDIR CON RaiseEnvido()
+    /// CONFIRMA SI EL EQUIPO AL QUE SE LE CANTO ENVIDO ACEPTA O NO ACEPTA EL ENVIDO
     /// </summary>
     /// <param name="Isaccepted"></param>
     public void EnvidoConfirmation(bool Isaccepted)
@@ -904,97 +588,11 @@ public class GameManager : NetworkBehaviour
     private void EnvidoConfirmationServerRpc(bool accepted, RpcParams rpc = default)
     {
         ulong sender = rpc.Receive.SenderClientId;
-        int senderSeat = GetSeatIndexFromClientId(sender);
-        int senderTeam = Seats[senderSeat].team;
-        if (accepted)
-        {
-            int winnerSeat = -1;
-            int maxEnvidoValue = -1;
-            scoringLogic.AddEnvidoPointsByStage();
-            foreach (var pd in envidoValue_Seats)
-            {
-                if (pd.Value > maxEnvidoValue)
-                {
-                    maxEnvidoValue = pd.Value;
-                    winnerSeat = pd.Key;
-                }
-            }
-            AddEnvidoPointsToWinner(Seats[winnerSeat].team);
-        }
-        else
-        {
-            if (senderTeam == 1) AddEnvidoPointsToWinner(2); //? Gana el equipo contrario.
-            else AddEnvidoPointsToWinner(1);
-        }
-        waitingEnvidoConfirmation = false;
-        EnvidoConfirmationClientRpc();
+        int responderSeat = GetSeatIndexFromClientId(sender);
+
+        currentRules.ProcessEnvidoConfirmation(responderSeat, accepted);
     }
 
-
-    [Rpc(SendTo.Everyone)]
-    private void EnvidoConfirmationClientRpc()
-    {
-        //Debug.Log("ENVIDO ACEPTADO " + accepted);
-        OnWaitingEnvidoConfirmation?.Invoke(this, new OnWaitingConfirmationArgs
-        {
-            isStageEnded = true
-        });
-    }
-
-    //? AGREGA LOS PUNTOS DE ENVIDO AL GANADOR
-    private void AddEnvidoPointsToWinner(int winnerTeam)
-    {
-        if (scoringLogic.envidoStage == EnvidoStage.FaltaEnvido)
-        {
-            if (winnerTeam == 1) {
-                int faltaEnvidoValue = 15-(Team2Points.Value % 15);
-                Team1Points.Value += faltaEnvidoValue;
-            }
-            else {
-                int faltaEnvidoValue = 15-(Team1Points.Value % 15); 
-                Team2Points.Value += faltaEnvidoValue;
-            }
-            Debug.Log("-     FALTA ENVIDO       -");
-            Debug.Log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-        }
-        else
-        {
-            if (winnerTeam == 1) Team1Points.Value += scoringLogic.GetEnvidoPointsInPlay();
-            else Team2Points.Value += scoringLogic.GetEnvidoPointsInPlay();
-        }
-        Debug.Log("SE AGREGAN " + scoringLogic.GetEnvidoPointsInPlay() + " por " + scoringLogic.envidoStage + " AL EQUIPO " + winnerTeam);
-    }
-
-
-    //? --- RESOLUCION DE MANO --- */
-    private void CalculatePoints(int winnerTeam)
-    {
-        if (!currentHand.IsHandClosed())
-        {
-            Debug.LogError("NO SE PUEDE CALCULAR PUNTOS SI LA MANO NO ESTA CERRADA");
-            return;
-        }
-        if (winnerTeam == -1)
-        {
-            //? TERMINO LA MANO Y EMPATARON LAS 3 RONDAS, NO SE SUMA PUNTOS.
-            Debug.Log("--- EMPATE TOTAL ---");
-        }
-        else
-        {
-            if (winnerTeam == 1) Team1Points.Value += scoringLogic.GetPointsInPlay();
-            else Team2Points.Value += scoringLogic.GetPointsInPlay();
-        }
-        if (GetTeam1TotalPoints() >= pointsToWin)
-        {
-            FinishGameClientRpc(1);
-            return;
-        }
-        if (GetTeam2TotalPoints() >= pointsToWin)
-        {
-            FinishGameClientRpc(2);
-            return;
-        }
-    }
     [Rpc(SendTo.Everyone)]
     private void FinishGameClientRpc(int win)
     {
@@ -1003,7 +601,6 @@ public class GameManager : NetworkBehaviour
             winnerTeam = win
         });
     }
-
 
     /// <summary>
     /// LE AVISA AL SERVIDOR, SEGUN EL JUGADOR QUE LO LLAMA. QUE EQUIPO SE RINDIO
@@ -1016,53 +613,60 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void SurrenderServerRpc(RpcParams rpc = default)
     {
-        Debug.Log($"El equipo rival Se rindio. El equipo gana {scoringLogic.GetPointsInPlay()} puntos.");
-        ulong surrenderSenderId = rpc.Receive.SenderClientId;
-        DeclareTeamWinnerBySurrender(surrenderSenderId);
+        ulong sender = rpc.Receive.SenderClientId;
+        int surrenderSeat = GetSeatIndexFromClientId(sender);
+        
+        currentRules.ProcessSurrender(surrenderSeat);
     }
-    private void DeclareTeamWinnerBySurrender(ulong surrenderSenderId)
+    //? RECIBE LA ROTACION DE LA CABEZA DEL JUGADOR
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SyncHeadRotationServerRpc(int seatIndex, Quaternion headRotation, RpcParams rpc = default)
     {
-        roundFinished.Value = true;
-        currentHand.CloseHand();
-        int SurrenderSeat = GetSeatIndexFromClientId(surrenderSenderId);
-        if (Seats[SurrenderSeat].team == 1) CalculatePoints(2);    //? Se rindio equipo 1
-        else CalculatePoints(1);                                //? Se rindio equipo 2
-        RestartDefaultValues();
+        SyncHeadRotationClientRpc(seatIndex, headRotation);
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void SyncHeadRotationClientRpc(int seatIndex, Quaternion headRotation)
+    {
+        if (Seats_index.TryGetValue(seatIndex, out var seat))
+        {
+            if (seat.TryGetComponent<SeatController>(out var controller))
+            {
+                controller.ReceiveHeadRotation(headRotation);
+            }
+        }
     }
 
 
 
-    //? FUNCION QUE DEVUELVE LOS PARAMS CON LOS ID A LOS CUALES MANDARLE EL CLIENTRPC 
+
+
+
+
+
+
+    //* HANDLERS  
+    private void SeatLayoutManager_OnSeatCreated(object sender, SeatCreatedEventArgs e)
+    {
+        Seats_index[e.SeatIndex] = e.Seat;
+    }
+    private void TablePlayAreaManager_OnSlotLaidOut(object sender, OnSlotsLaidOutArgs e)
+    {
+        playSlots_Seats = e.PlayAreaBySeatIndex;
+    }
     private RpcParams GetRpcTargetParams(params ulong[] targetIds)
     {
         RpcParams rpcParams = default;
-
         if (targetIds.Length == 1)
         {
-            // CASO 1: Para mandarle las cartas a UN solo jugador
-            // Se usa RpcTarget.Single
             rpcParams.Send.Target = RpcTarget.Single(targetIds[0], RpcTargetUse.Temp);
         }
         else
         {
-            // CASO 2: Para mandarle el "Truco" al equipo contrario (VARIOS IDs)
-            // Se usa RpcTarget.Group
             rpcParams.Send.Target = RpcTarget.Group(targetIds, RpcTargetUse.Temp);
         }
-
         return rpcParams;
     }
-
-    //? REINICIO DE VALORES DE RONDAS
-    private void RestartDefaultValues()
-    {
-        waitingTrucoConfirmation = false;
-        waitingEnvidoConfirmation = false;
-        TeamThatCalledEnvido = -1;
-        TeamThatCalledTruco = -1;
-        scoringLogic.RestartScoringValues();
-    }
-
     public int GetLocalPlayerTeam()
     {
         int seatIndex = GetSeatIndexFromClientId(NetworkManager.Singleton.LocalClientId);
@@ -1095,12 +699,7 @@ public class GameManager : NetworkBehaviour
     }
     public bool isRoundFinished()
     {
-        return roundFinished.Value;
-    }
-
-    public bool IsFirstTurn()
-    {
-        return isFirstTurn;
+        return currentGameState.Value == GameState.RoundFinished;
     }
     public int GetTeam1TotalPoints()
     {
@@ -1110,28 +709,7 @@ public class GameManager : NetworkBehaviour
     {
         return Team2Points.Value;
     }
-
-    //? RECIBE LA ROTACION DE LA CABEZA DEL JUGADOR
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SyncHeadRotationServerRpc(int seatIndex, Quaternion headRotation, RpcParams rpc = default)
-    {
-        SyncHeadRotationClientRpc(seatIndex, headRotation);
-    }
-
-    [Rpc(SendTo.Everyone)]
-    private void SyncHeadRotationClientRpc(int seatIndex, Quaternion headRotation)
-    {
-        if (Seats_index.TryGetValue(seatIndex, out var seat))
-        {
-            if (seat.TryGetComponent<SeatController>(out var controller))
-            {
-                controller.ReceiveHeadRotation(headRotation);
-            }
-        }
-    }
-
-    //? Metodos para el TurnManager
+    public void SetCurrentGameState(GameState gs) { currentGameState.Value = gs; }
     public PlayerData GetPlayerData(int seatIndex) => Seats[seatIndex];
     public int[] GetLastSeats() => LastSeats;
-    public int GetCurrentRound() => currentHand != null ? currentHand.GetCurrentRoundIndex() : 0;
 }
