@@ -1,3 +1,4 @@
+/*
 using System;
 using TMPro;
 using Unity.Netcode;
@@ -77,5 +78,5 @@ public class EnvidoConfirmationUI : MonoBehaviour
     private void Hide() {
         gameObject.SetActive(false);
     }
-}
+}*/
 

@@ -13,13 +13,13 @@ public class TablePlayAreaManager : MonoBehaviour
     [SerializeField] Transform playSlotPrefab;
     [SerializeField] Transform tablePlayArea;
     [SerializeField] GameObject cardPrefab;
+    [SerializeField] float tableHigh = 1.3f;
 
     public EventHandler<OnSlotsLaidOutArgs> OnSlotsLaidOut;
     public void CreatePlayArea(int totalPlayers, Vector3 center, float radius, float angleOffsetDeg = 0f)
     {
         Dictionary<int, PlaySlotView> PlayAreaBySeatIndex = new();
         float anglePerSeat = 360f / totalPlayers;
-        float tableHigh = 1.3f;
         for (int i = 0; i < totalPlayers; i++)
         {
             float angleDeg = angleOffsetDeg + i * anglePerSeat;

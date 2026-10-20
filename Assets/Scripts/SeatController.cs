@@ -15,20 +15,24 @@ public class SeatController : MonoBehaviour
     private ulong clientId;
     private int team;
 
-    [Header("UI 3D")]
+    [Header("Roles de Ronda (UI)")]
     [SerializeField] private TextGlobeUI textGlobeUI;
-
+    [Header("Visuales de Turno")]
+    [SerializeField] private GameObject turnIndicatorRoot;
+    [SerializeField] private GameObject iconoMano;
+    [SerializeField] private GameObject iconoPie;
     [Header("Animation Rigging")]
-    [SerializeField] private Transform headTarget;
+    [SerializeField] private Transform headTarget; 
+    [SerializeField] private Animator animator;
+
     [Header("Animación Mano Cartas")]
     [SerializeField] private TwoBoneIKConstraint manoCartasIK;
     private float pesoObjetivoIK = 0f;
     [Header("Referencias de Mallas - Señas")]
     [SerializeField] private SkinnedMeshRenderer meshCuerpo;
-    [SerializeField] private SkinnedMeshRenderer meshCejas;
 
     [Header("Configuración de Señas")]
-    [SerializeField] private float velocidadSena = 500f;
+    [SerializeField] private float velocidadSena = 250f;
 
     [Header("Cartas")]
     [SerializeField] private Transform[] handHolderPoints;
@@ -46,17 +50,26 @@ public class SeatController : MonoBehaviour
     [SerializeField] private Transform HeadTransform; 
 
     public float mouseSensitivity = 250f;
-    public float minPitch = -60f;
+    public float minPitch = -45f;
     public float maxPitch = 30f;
-    public float maxYaw = 60f;
+    public float maxYaw = 45f;
     private float xRotation = 0f; 
     private float yRotation = 0f;
+
+    private const string SenaAnchoEspada = "ancho_espada";
+    private const string SenaAnchoBasto = "ancho_basto";
+    private const string SenaSieteEspada = "7_izq";
+    private const string SenaSieteOro = "7_der";
+    private const string SenaTres = "Morder_3";
+    private const string SenaDos = "Beso_2";
+    private const string SenaNada = "nada";
 
     [Header("Sincronización de Red")]
     private float syncTimer = 0f;
     private float syncRate = 0.1f; 
     public static Transform LocalPlayerCamera { get; private set; } 
     private Dictionary<Seña, float> targetWeights = new();
+    private Quaternion targetHeadRotation;
 
     private void Awake()
     {
@@ -67,6 +80,30 @@ public class SeatController : MonoBehaviour
     void Start()
     {
         GameManager.Instance.OnPlayerMadeCall += GameManager_OnPlayerMadeCall;
+        TurnManager.Instance.OnChangedTurn += TurnManager_OnChangedTurn;
+        
+        if (turnIndicatorRoot != null) turnIndicatorRoot.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
+
+        if (TurnManager.Instance != null)
+        {
+            TurnManager.Instance.OnChangedTurn -= TurnManager_OnChangedTurn;
+        }
+        if (GameManager.Instance != null) GameManager.Instance.OnPlayerMadeCall -= GameManager_OnPlayerMadeCall;
+    }
+
+private void TurnManager_OnChangedTurn(object sender, OnChangeTurn_TurnChangedArgs e)
+    {
+       
+        bool isMyTurn = TurnManager.Instance.GetCurrentTurnIndex() == this.seatIndex; 
+        
+        if (turnIndicatorRoot != null)
+        {
+            turnIndicatorRoot.SetActive(isMyTurn);
+        }
     }
     private void Update()
     {
@@ -77,6 +114,13 @@ public class SeatController : MonoBehaviour
             HandleCardHoverAndClick();
             HeadTransform.localScale = Vector3.zero;
         }
+        else 
+        {
+            if (cameraMount != null)
+            {
+                cameraMount.localRotation = Quaternion.Slerp(cameraMount.localRotation, targetHeadRotation, Time.deltaTime * 12f);
+            }
+        }
         
         if (headTarget != null && cameraMount != null) 
         {
@@ -84,15 +128,11 @@ public class SeatController : MonoBehaviour
             headTarget.position = posicionObjetivo;
         }
 
-        // NUEVO: Movimos el Lerp al Update general. 
-        // De esta forma, el brazo se mueve suavemente tanto para el jugador local 
-        // como para los jugadores remotos (que reciben el pesoObjetivoIK por el RPC)
-        if (manoCartasIK != null)
+        /*if (manoCartasIK != null)
         {
             manoCartasIK.weight = Mathf.Lerp(manoCartasIK.weight, pesoObjetivoIK, Time.deltaTime * 5f);
-        }
+        }*/
     }
-
     private void HandleCameraMovement()
     {
         if (Input.GetMouseButton(1)) 
@@ -125,7 +165,13 @@ public class SeatController : MonoBehaviour
             Cursor.lockState = CursorLockMode.None;
         }
     }
- 
+    public void SetTurnIndicator(bool isActive)
+    {
+        if (turnIndicatorRoot != null)
+        {
+            turnIndicatorRoot.SetActive(isActive);
+        }
+    }
     private void LateUpdate()
     {
         ActualizarAnimacionSenas();
@@ -133,11 +179,27 @@ public class SeatController : MonoBehaviour
 
     private void HandleSenaInputs()
     {
-        if (Input.GetKeyDown(KeyCode.E)) GameManager.Instance.ToggleSenaServerRpc(Seña.AnchoEspada, true);
-        if (Input.GetKeyUp(KeyCode.E)) GameManager.Instance.ToggleSenaServerRpc(Seña.AnchoEspada, false);
-            
-        if (Input.GetKeyDown(KeyCode.B)) GameManager.Instance.ToggleSenaServerRpc(Seña.Tres, true);
-        if (Input.GetKeyUp(KeyCode.B)) GameManager.Instance.ToggleSenaServerRpc(Seña.Tres, false);
+        if (Input.GetKeyDown(KeyCode.Q)) GameManager.Instance.ToggleSenaServerRpc(Seña.AnchoEspada, true);
+        if (Input.GetKeyUp(KeyCode.Q)) GameManager.Instance.ToggleSenaServerRpc(Seña.AnchoEspada, false);
+        
+        if (Input.GetKeyDown(KeyCode.W)) GameManager.Instance.ToggleSenaServerRpc(Seña.AnchoBasto, true);
+        if (Input.GetKeyUp(KeyCode.W)) GameManager.Instance.ToggleSenaServerRpc(Seña.AnchoBasto, false);
+
+        if (Input.GetKeyDown(KeyCode.E)) GameManager.Instance.ToggleSenaServerRpc(Seña.Tres, true);
+        if (Input.GetKeyUp(KeyCode.E)) GameManager.Instance.ToggleSenaServerRpc(Seña.Tres, false);    
+        
+        if (Input.GetKeyDown(KeyCode.R)) GameManager.Instance.ToggleSenaServerRpc(Seña.Dos, true);
+        if (Input.GetKeyUp(KeyCode.R)) GameManager.Instance.ToggleSenaServerRpc(Seña.Dos, false);
+
+        if (Input.GetKeyDown(KeyCode.T)) GameManager.Instance.ToggleSenaServerRpc(Seña.SieteEspada, true);
+        if (Input.GetKeyUp(KeyCode.T)) GameManager.Instance.ToggleSenaServerRpc(Seña.SieteEspada, false);
+
+        if (Input.GetKeyDown(KeyCode.Y)) GameManager.Instance.ToggleSenaServerRpc(Seña.SieteOro, true);
+        if (Input.GetKeyUp(KeyCode.Y)) GameManager.Instance.ToggleSenaServerRpc(Seña.SieteOro, false);
+
+        if (Input.GetKeyDown(KeyCode.U)) GameManager.Instance.ToggleSenaServerRpc(Seña.Nada, true);
+        if (Input.GetKeyUp(KeyCode.U)) GameManager.Instance.ToggleSenaServerRpc(Seña.Nada, false);
+        if (Input.GetKeyDown(KeyCode.A)) animator.SetTrigger("TEST");
 
         if (Input.GetMouseButtonDown(0)) HandleCardHoverAndClick();
     }
@@ -146,7 +208,7 @@ public class SeatController : MonoBehaviour
     {
         if (!isLocal && cameraMount != null)
         {
-            cameraMount.localRotation = newRotation;
+            targetHeadRotation = newRotation;
             pesoObjetivoIK = newIKWeight; 
         }
     }
@@ -164,17 +226,25 @@ public class SeatController : MonoBehaviour
             switch (sena)
             {
                 case Seña.AnchoEspada:
-                    SuavizarBlendShape(meshCejas, "ancho_espada", target);
-                    SuavizarBlendShape(meshCuerpo, "ancho_espada", target); 
+                    SuavizarBlendShape(meshCuerpo, SenaAnchoEspada, target);
                     break;
                 case Seña.AnchoBasto:
-                    SuavizarBlendShape(meshCejas, "ancho_basto", target);
+                    SuavizarBlendShape(meshCuerpo, SenaAnchoBasto , target);
+                    break;
+                case Seña.SieteEspada:
+                    SuavizarBlendShape(meshCuerpo, SenaSieteEspada, target);
+                    break;
+                case Seña.SieteOro:
+                    SuavizarBlendShape(meshCuerpo, SenaSieteOro, target);
                     break;
                 case Seña.Tres:
-                    SuavizarBlendShape(meshCuerpo, "3", target);
+                    SuavizarBlendShape(meshCuerpo, SenaTres, target);
                     break;
                 case Seña.Dos:
-                    SuavizarBlendShape(meshCuerpo, "2", target);
+                    SuavizarBlendShape(meshCuerpo, SenaDos, target);
+                    break;
+                default:
+                    SuavizarBlendShape(meshCuerpo, SenaNada, target);
                     break;
             }
         }
@@ -286,7 +356,6 @@ public class SeatController : MonoBehaviour
             }
         }
     }
-    private void OnDestroy() { if (GameManager.Instance != null) GameManager.Instance.OnPlayerMadeCall -= GameManager_OnPlayerMadeCall; }
     public Transform HideCardAndGetOrigin(int slotIndex)
     {
         if (slotIndex < 0 || slotIndex >= HandCards.Length) return null;
@@ -351,6 +420,17 @@ public class SeatController : MonoBehaviour
             cartaSeleccionadaActual.SetHoverState(false);
             cartaSeleccionadaActual = null;
         }
+    }
+
+    /// <summary>
+    /// ACTIVA LOS ICONOS DE MANO Y PIE
+    /// </summary>
+    /// <param name="isMano"></param>
+    /// <param name="isPie"></param>
+    public void SetRoundRoles(bool isMano, bool isPie)
+    {
+        if (iconoMano != null) iconoMano.SetActive(isMano);
+        if (iconoPie != null) iconoPie.SetActive(isPie);
     }
 
 }

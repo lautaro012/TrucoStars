@@ -4,123 +4,108 @@ using UnityEngine;
 
 public class Card : MonoBehaviour
 {
-    [SerializeField] private GameObject cardFront;
-    [SerializeField] private GameObject hover;
-    [SerializeField] private Transform contenedorVisual;
-
+    [Header("Configuración Visual")]
+    [SerializeField] private MeshRenderer meshRenderer; // Arrastrá el MeshRenderer de tu nueva carta acá
+    
     private float Yoffset = 0.01f;
     private CardSO cardSO;
     private int cardParentIndex;
-    private MeshRenderer frontRenderer;
-
-    void Awake() {
-        if (cardFront != null)
-            frontRenderer = cardFront.GetComponent<MeshRenderer>();
-    }
-
+    
+    // Guardamos la instancia del material del frente para no crear basura en memoria
+    private Material frontMaterialInstance; 
+    private bool isCurrentlyHovered = false;
     public bool isInteractable = false; 
 
-   /* void OnMouseEnter()
+    private void Awake() 
     {
-        // Si no es interactable (ej: es del rival), ignoramos el mouse
-        if (!isInteractable) return; 
-
-        hover.SetActive(true);
-        // Usamos localPosition directo, nada de Translate
-        transform.localPosition = new Vector3(
-            transform.localPosition.x, 
-            transform.localPosition.y + Yoffset, 
-            transform.localPosition.z
-        );
+        if (meshRenderer == null)
+            meshRenderer = GetComponent<MeshRenderer>();
     }
 
-    void OnMouseExit()
+    public void SetCardParentIndex(int index) 
     {
-        if (!isInteractable) return;
-
-        hover.SetActive(false);
-        // Revertimos la posición matemáticamente
-        transform.localPosition = new Vector3(
-            transform.localPosition.x, 
-            transform.localPosition.y - Yoffset, 
-            transform.localPosition.z
-        );
-    }*/
-    public void SetHoverState(bool isHovering)
-    {
-        if (!isInteractable) return;
-
-        if (isHovering && !hover.activeSelf)
-        {
-            hover.SetActive(true);
-            contenedorVisual.localPosition = new Vector3(
-                contenedorVisual.localPosition.x, 
-                contenedorVisual.localPosition.y + Yoffset, 
-                contenedorVisual.localPosition.z
-            );
-        }
-        else if (!isHovering && hover.activeSelf)
-        {
-            hover.SetActive(false);
-            // VOLVEMOS A BAJAR SOLO EL DIBUJO
-            contenedorVisual.localPosition = new Vector3(
-                contenedorVisual.localPosition.x, 
-                contenedorVisual.localPosition.y - Yoffset, 
-                contenedorVisual.localPosition.z
-            );
-        }
-    }
-
-    public void SetCardParentIndex(int index) {
          cardParentIndex = index;
     }
 
-    //* SETEA EL CARDSO SEGUN EL INDEX
+    // --- MANEJO DE MATERIAL Y TEXTURA (SPRITE SHEET) ---
+
     public void SetCardSObyIndex(int cardIndex)
     {
         CardSO cardData = DeckManager.Instance.GetCardByIndex(cardIndex);
         SetCardData(cardData);
     }
-    //* RECIBE LA CARTA Y LE APLICA SU TEXTURA
-    private void SetCardData(CardSO cardData ) {
+
+    private void SetCardData(CardSO cardData) 
+    {
         cardSO = cardData;
         if (cardData.cardSprite == null) return;
-        Material newMat = new Material(frontRenderer.material);
-        newMat.mainTexture = cardData.cardSprite.texture;
 
+        // 1. Obtenemos el arreglo de materiales de la carta
+        Material[] mats = meshRenderer.materials;
+        
+        // 2. Extraemos el material del frente (Índice 0)
+        frontMaterialInstance = mats[0]; 
+
+        // ¡NUEVO! Apagamos la luz por defecto apenas la carta se configura
+        frontMaterialInstance.DisableKeyword("_EMISSION");
+        // 3. Le aplicamos la textura completa del SpriteSheet
+        frontMaterialInstance.mainTexture = cardData.cardSprite.texture;
+
+        // 4. Calculamos el recorte exacto de la carta (Tu código original perfecto)
         Rect textureRect = cardData.cardSprite.textureRect;
-        newMat.mainTextureScale = new Vector2(
+        frontMaterialInstance.mainTextureScale = new Vector2(
             textureRect.width / cardData.cardSprite.texture.width,
             textureRect.height / cardData.cardSprite.texture.height
         );
-        newMat.mainTextureOffset = new Vector2(
+        frontMaterialInstance.mainTextureOffset = new Vector2(
             textureRect.x / cardData.cardSprite.texture.width,
             textureRect.y / cardData.cardSprite.texture.height
         );
-        frontRenderer.material = newMat; 
+
+        // 5. Volvemos a guardar el material modificado en el arreglo
+        mats[0] = frontMaterialInstance;
+        meshRenderer.materials = mats; 
     }
+    
+    // --- EFECTO DE HOVER (EMISIÓN Y ELEVACIÓN) ---
+
+    public void SetHoverState(bool isHovering)
+    {
+        if (!isInteractable || frontMaterialInstance == null) return;
+
+        if (isHovering && !isCurrentlyHovered)
+        {
+            isCurrentlyHovered = true;
+            
+            // ¡Prendemos la llave de luz! (Usa la config que dejaste en Unity)
+            frontMaterialInstance.EnableKeyword("_EMISSION");
+        }
+        else if (!isHovering && isCurrentlyHovered)
+        {
+            isCurrentlyHovered = false;
+            
+            // Apagamos la llave de luz
+            frontMaterialInstance.DisableKeyword("_EMISSION");
+        }
+    }
+
+    // --- MÉTODOS GETTERS Y ANIMACIÓN (Sin cambios lógicos) ---
+
     public CardSO GetCardSO()
     {
         if (cardSO == null) Debug.LogWarning("CARDSO from card NULL");
         return cardSO;
     }
-    public int GetCardParentIndex()
-    {
-        return cardParentIndex;
-    }
-    public void DestroySelf() {
-        Destroy(gameObject);
-    }
+    
+    public int GetCardParentIndex() => cardParentIndex;
+    
+    public void DestroySelf() => Destroy(gameObject);
 
-    /// <summary>
-    /// Mueve una carta hacia un destino en un tiempo float determinado
-    /// </summary>
-    /// <param name="destiny"></param>
-    /// <param name="Time"></param>
-    public void SmoothMoveCardTo(Transform destiny, float time){
+    public void SmoothMoveCardTo(Transform destiny, float time)
+    {
         isInteractable = false;
-        hover.SetActive(false);
-        StartCoroutine(MoveRoutine(destiny,time));
+        SetHoverState(false); // Forzamos apagar el hover antes de mover
+        StartCoroutine(MoveRoutine(destiny, time));
     }
 
     private IEnumerator MoveRoutine(Transform target, float duration)
@@ -128,37 +113,26 @@ public class Card : MonoBehaviour
         Vector3 startPos = transform.position;
         Quaternion startRot = transform.rotation;
         
-        // 2. Definimos la posición final (el anclaje) y su rotación plana (acostada)
         Vector3 endPos = target.position;
-        // Le damos un pequeño desvío en Z para que no parezca perfecta de robot
         float randomZ = UnityEngine.Random.Range(-5f, 5f);
         Quaternion endRot = Quaternion.Euler(90f, -90f, randomZ);
 
         float timeElapsed = 0f;
-        float archHeight = 0.2f; // Ajustá esto para que vuele más o menos alto
+        float archHeight = 0.2f; 
 
         while (timeElapsed < duration)
         {
             timeElapsed += Time.deltaTime;
-            // 't' va de 0 a 1
             float t = timeElapsed / duration; 
 
-            // 3. El movimiento suave entre A y B
             Vector3 currentPos = Vector3.Lerp(startPos, endPos, t);
-            
-            // 4. La magia de la curva usando Mathf.Sin
             currentPos.y += Mathf.Sin(t * Mathf.PI) * archHeight;
             
-            // 5. La rotación suave y la posicion
             transform.SetPositionAndRotation(currentPos, Quaternion.Lerp(startRot, endRot, t));
-            yield return null; // Esperamos al siguiente frame
+            yield return null; 
         }
 
-        // 6. Al terminar, la emparentamos a la mesa y aseguramos que quede perfecta
         transform.SetParent(target);
         transform.SetPositionAndRotation(endPos, endRot);
-    }
-    public void SetCardMaterial(Material material) {
-        frontRenderer.material = material;
     }
 }

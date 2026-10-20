@@ -36,8 +36,8 @@ public class DynamicResponsePanelUI : MonoBehaviour
                 int index = i; 
                 poolButtons[i].onClick.AddListener(() => 
                 { 
+                    Hide(); 
                     options[index].buttonAction?.Invoke(); 
-                    Hide(); // Ocultamos el panel al hacer clic
                 });
             }
             else

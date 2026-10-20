@@ -145,7 +145,7 @@ public class GameManager : NetworkBehaviour
 
     //? VARIABLES PARA DEFINIR POSICIONES
     private Dictionary<int, PlayerData> Seats;
-    private Dictionary<int, SeatController> Seats_index;
+    private Dictionary<int, SeatController> Seats_index; 
     private Dictionary<ulong, int> clientsId_Seats;
     private Dictionary<int, PlaySlotView> playSlots_Seats;
     private Dictionary<int, int> envidoValue_Seats;
@@ -443,8 +443,25 @@ public class GameManager : NetworkBehaviour
 
         int initialTurn = currentHand.GetStartingSeatThisHand(); 
         TurnManager.Instance.AdvanceTurn(initialTurn); 
+        UpdateRoundRolesClientRpc(initialTurn, LastSeats);
     }
-
+    [Rpc(SendTo.Everyone)]
+    private void UpdateRoundRolesClientRpc(int manoSeatIndex, int[] piesSeatIndexes)
+    {
+        foreach (var kvp in Seats_index)
+        {
+            int seatIndex = kvp.Key;
+            SeatController seat = kvp.Value;
+            
+            // Es Mano si coincide con el índice del primero
+            bool isMano = (seatIndex == manoSeatIndex);
+            
+            // Es Pie si coincide con el último (piesSeatIndexes[0]) o el anteúltimo (piesSeatIndexes[1])
+            bool isPie = (seatIndex == piesSeatIndexes[0] || seatIndex == piesSeatIndexes[1]);
+            
+            seat.SetRoundRoles(isMano, isPie);
+        }
+    }
 
     [Rpc(SendTo.Everyone)]
     private void ShowDeckClientRpc(int[] lastSeats)
@@ -876,20 +893,36 @@ public class GameManager : NetworkBehaviour
     /// <summary>
     /// Le hace saber al servidor que jugador canto truco e inicia la fase de confirmacion
     /// </summary>
-    public void Truco()
-    {
-        TrucoServerRpc();
-    }
+    public void Truco() { TrucoServerRpc(); }
+
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void TrucoServerRpc(RpcParams rpc = default)
+    {
+        ProcesarCantoTruco(rpc.Receive.SenderClientId);
+    }
+    public void RaiseTruco() { RaiseTrucoServerRpc(); }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void RaiseTrucoServerRpc(RpcParams rpc = default)
+    {
+        ulong senderId = rpc.Receive.SenderClientId;
+        
+        scoringLogic.TrucoAccepted();
+        AnnounceTrucoAcceptedClientRpc(scoringLogic.GetTrucoStage(), scoringLogic.GetPointsInPlay(), TeamThatCalledTruco);
+        waitingTrucoConfirmation = false;
+        
+        ProcesarCantoTruco(senderId);
+    }
+
+    private void ProcesarCantoTruco(ulong senderId)
     {
         if (roundFinished.Value || waitingTrucoConfirmation || scoringLogic.GetTrucoStage() == TrucoStage.Vale4)
         {
             Debug.LogWarning("NO SE PUEDE CANTAR TRUCO, round finished: " + roundFinished.Value + ", waitingconfirmation: " + waitingTrucoConfirmation + ", trucoStage: " + scoringLogic.GetTrucoStage());
             return;
         }
-        ulong sender = rpc.Receive.SenderClientId;
-        int senderSeat = GetSeatIndexFromClientId(sender);
+
+        int senderSeat = GetSeatIndexFromClientId(senderId);
         int callerTeam = Seats[senderSeat].team;
 
         if (TeamThatCalledTruco == callerTeam)
@@ -897,6 +930,7 @@ public class GameManager : NetworkBehaviour
             Debug.Log("[ERROR] No puedes cantar Truco dos veces seguidas.");
             return;
         }
+        
         TeamThatCalledTruco = callerTeam;
         waitingTrucoConfirmation = true;
 
@@ -944,21 +978,46 @@ public class GameManager : NetworkBehaviour
     /// Le hace saber al rival que se canto envido. Espera como argumento la fase de envido que se canto
     /// </summary>
     /// <param name="call"></param>
+    // 1. EL CANTO INICIAL DEL ENVIDO
     public void Envido(EnvidoStage call)
     {
         EnvidoServerRpc(call);
     }
+
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void EnvidoServerRpc(EnvidoStage call, RpcParams rpc = default)
+    {
+        // En el primer canto, no hay nada que "aceptar" previamente
+        ProcesarCantoEnvido(call, rpc.Receive.SenderClientId);
+    }
+
+    // 2. EL RETRUCO DEL ENVIDO (Sube la apuesta)
+    public void RaiseEnvido(EnvidoStage call) 
+    { 
+        RaiseEnvidoServerRpc(call); 
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void RaiseEnvidoServerRpc(EnvidoStage call, RpcParams rpc = default)
+    {
+        // A diferencia del truco, en el Envido no sumamos puntos todavía al retrucar,
+        // pero SI tenemos que apagar la espera de la fase anterior
+        waitingEnvidoConfirmation = false; 
+        
+        ProcesarCantoEnvido(call, rpc.Receive.SenderClientId);
+    }
+
+    // 3. LA LÓGICA PURA DEL ENVIDO (Sin interferencias de Netcode)
+    private void ProcesarCantoEnvido(EnvidoStage call, ulong senderId)
     {
         if (roundFinished.Value || waitingEnvidoConfirmation || scoringLogic.envidoStage == EnvidoStage.FaltaEnvido)
         {
             Debug.LogWarning("NO SE PUEDE CANTAR Envido, round finished: " + roundFinished.Value + ", waitingconfirmation: " + waitingEnvidoConfirmation + ", envidoStage: " + scoringLogic.envidoStage);
             return;
         }
-        if (scoringLogic.envidoStage == EnvidoStage.RealEnvido || scoringLogic.envidoStage == EnvidoStage.FaltaEnvido && call == EnvidoStage.Envido)
+        if (call <= scoringLogic.envidoStage)
         {
-            Debug.LogWarning("NO SE PUEDE CANTAR ENVIDO SI LA APUESTA YA ESTA SUBIDA. stage: " + scoringLogic.envidoStage + " y call: " + call);
+            Debug.LogWarning("NO SE PUEDE CANTAR ALGO MENOR O IGUAL A LO QUE YA ESTA EN JUEGO.");
             return;
         }
         int currentRound = GetCurrentRound();
@@ -966,22 +1025,29 @@ public class GameManager : NetworkBehaviour
             Debug.LogWarning("Intento de Envido fuera de la primera ronda.");
             return; 
         }
+        
 
-        //? Tomo el receptor del call
-        ulong sender = rpc.Receive.SenderClientId;
-        int senderSeat = GetSeatIndexFromClientId(sender);
-        bool isLast = senderSeat == LastSeats[0] || senderSeat == LastSeats[1];
-        if (!isLast)
+        int senderSeat = GetSeatIndexFromClientId(senderId);
+        
+        // REGLA DEL PIE: Solo aplica al PRIMER canto de envido en la mano
+        if (TeamThatCalledEnvido == -1) 
         {
-            Debug.LogWarning("SOLOS LOS ASIENTOS: " + LastSeats[0] + " y " + LastSeats[1] + " pueden cantar envido. vos sos " + senderSeat);
-            return;
+            bool isLast = senderSeat == LastSeats[0] || senderSeat == LastSeats[1];
+            if (!isLast)
+            {
+                Debug.LogWarning("SOLOS LOS ASIENTOS: " + LastSeats[0] + " y " + LastSeats[1] + " pueden cantar envido. vos sos " + senderSeat);
+                return;
+            }
+            scoringLogic.EnvidoCalled(); // Activamos el flag en ScoringLogic de que se empezó a jugar el envido
         }
-        scoringLogic.EnvidoCalled();
+
         int callerTeam = Seats[senderSeat].team;
         waitingEnvidoConfirmation = true;
-        TeamThatCalledEnvido = callerTeam;
-        scoringLogic.NextEnvidoStage(call);
-        List<ulong> targetClients = new();
+        TeamThatCalledEnvido = callerTeam; // Actualizamos quién fue el ÚLTIMO equipo en subir la apuesta
+        scoringLogic.NextEnvidoStage(call); // Actualizamos la etapa actual en la lógica
+        
+        // Preparamos la lista de clientes del equipo RIVAL para mandarles el panel
+        List<ulong> targetClients = new List<ulong>();
         foreach (var kvp in Seats)
         {
             if (kvp.Value.team != callerTeam)
@@ -990,14 +1056,17 @@ public class GameManager : NetworkBehaviour
             }
         }
         
+        // Grito del personaje
         string textCall = call == EnvidoStage.EnvidoEnvido ? "¡ENVIDO ENVIDO!" :
                   call == EnvidoStage.RealEnvido ? "¡REAL ENVIDO!" :
                   call == EnvidoStage.FaltaEnvido ? "¡FALTA ENVIDO!" : "¡ENVIDO!";
         AnnounceCallToAllClientRpc(senderSeat, textCall);
 
+        // Disparamos los eventos a los clientes
         SendEnvidoToOpponentClientRpc(callerTeam, scoringLogic.envidoStage, GetRpcTargetParams(targetClients.ToArray()));
         StartEnvidoStageClientRpc();
     }
+
 
     //? les avisa a los oponentes que el rival canto envido
     [Rpc(SendTo.SpecifiedInParams)]
@@ -1020,14 +1089,6 @@ public class GameManager : NetworkBehaviour
     /// SE LLAMA CUANDO EL EQUIPO SUBE LA APUESTA DEL ENVIDO. RECIBE EL ENVIDOSTAGE LLAMADO, NO CONFUNDIR CON EnvidoConfirmation()
     /// </summary>
     /// <param name="call"></param>
-    public void RaiseEnvido(EnvidoStage call) { RaiseEnvidoServerRpc(call); }
-
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    private void RaiseEnvidoServerRpc(EnvidoStage call)
-    {
-        waitingEnvidoConfirmation = false;
-        EnvidoServerRpc(call);
-    }
     
     /// <summary>
     /// CONFIRMA SI EL EQUIPO AL QUE SE LE CANTO ENVIDO ACEPTA O NO ACEPTA EL ENVIDO, NO CONFUNDIR CON RaiseEnvido()

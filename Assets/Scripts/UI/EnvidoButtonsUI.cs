@@ -1,3 +1,4 @@
+/*
 using System;
 using TMPro;
 using Unity.Netcode;
@@ -136,4 +137,4 @@ public class EnvidoButtonsUI : MonoBehaviour
     {
         gameObject.SetActive(true);
     }
-}
+}*/
