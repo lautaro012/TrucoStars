@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ce07c42ba384c93439ce00c1b426ccf9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265796
+  packageName: Vintage Tavern
+  packageVersion: 1.0
+  assetPath: Assets/VintageTavern/Materials/Pac_2.mat
+  uploadId: 619012

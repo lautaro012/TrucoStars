@@ -1,0 +1,1064 @@
+fileFormatVersion: 2
+guid: 4103618d003c74d818b44dd7f804b794
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: 7_swords
+      rect:
+        serializedVersion: 2
+        x: 107
+        y: 212
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8fe7cea7f933255b2ac3ab383f28b2f5
+      internalID: 2122183766
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7_golds
+      rect:
+        serializedVersion: 2
+        x: 158
+        y: 210
+        width: 49
+        height: 79
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 48, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 52d97bc3b5e7107488cbd75144ce3cdb
+      internalID: -1657053578
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cartas_truco_5
+      rect:
+        serializedVersion: 2
+        x: 389
+        y: 258
+        width: 12
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c601d1d323242a172bd27c9824154cb2
+      internalID: -1949676490
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 2_golds
+      rect:
+        serializedVersion: 2
+        x: 260
+        y: 329
+        width: 49
+        height: 79
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 48, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 62abf8ef714cf5d93b2c74d2858c0042
+      internalID: -220030778
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 2_goblets
+      rect:
+        serializedVersion: 2
+        x: 259
+        y: 251
+        width: 49
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 47, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4781dd7a4ef01c4c59d1287d57d42e5f
+      internalID: 2058424676
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 3_goblets
+      rect:
+        serializedVersion: 2
+        x: 209
+        y: 250
+        width: 49
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 47, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 505f3bab89371c670a4aa61bd9ed4065
+      internalID: 1237567100
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 3_swords
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 173
+        width: 49
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 47, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5821a3379c2fa1e0e8c15bae377c53a9
+      internalID: 530071901
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 2_swords
+      rect:
+        serializedVersion: 2
+        x: 261
+        y: 174
+        width: 49
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 47, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a8048393ed17d60e1b05e72a25514469
+      internalID: -572512725
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 1_goblets
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 173
+        width: 49
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 47, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 00b238d6fe44be6eb9f7446b4c20c100
+      internalID: 1874877980
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 1_golds
+      rect:
+        serializedVersion: 2
+        x: 310
+        y: 252
+        width: 49
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 47, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ce2f3b479ac03c8cd880ced569b260db
+      internalID: 1699134266
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 3_clubs
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 96
+        width: 49
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 47, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 84a89c65c726fb68688b82bbe6e6ef73
+      internalID: -32297164
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 2_clubs
+      rect:
+        serializedVersion: 2
+        x: 258
+        y: 97
+        width: 49
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 47, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3193f7d22421ea0599878beae7ef1fa6
+      internalID: 945481974
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 12_swords
+      rect:
+        serializedVersion: 2
+        x: 361
+        y: 175
+        width: 49
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 47, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 295e29eb00cce8e98b11d93fbb30a761
+      internalID: -285371479
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 1_swords
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 211
+        width: 47
+        height: 77
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 1, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5a53854a08e31143e8173b856e2955cd
+      internalID: -1762956319
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 1_clubs
+      rect:
+        serializedVersion: 2
+        x: 56
+        y: 212
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ab6f2157bc1a2816ead4a3dd02734995
+      internalID: -1563666577
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 12_golds
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 330
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4c09c7b8d5c21cfe18f9fee20137c22b
+      internalID: -1099240300
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 11_golds
+      rect:
+        serializedVersion: 2
+        x: 412
+        y: 330
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: faa6c0caa0031b57ab0e802f3c9f97e8
+      internalID: 1982764768
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 10_golds
+      rect:
+        serializedVersion: 2
+        x: 463
+        y: 331
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1b3afe146eaf22db884de98097388694
+      internalID: -728967406
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 10_goblets
+      rect:
+        serializedVersion: 2
+        x: 463
+        y: 253
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ec356a5765269ffd5b1db31206de54c2
+      internalID: -331949583
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 10_swords
+      rect:
+        serializedVersion: 2
+        x: 463
+        y: 174
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1a2dc51f9e1fb3a0a9b7cb1bbd9fb43c
+      internalID: -1675968307
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 10_clubs
+      rect:
+        serializedVersion: 2
+        x: 463
+        y: 97
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9c2f594db05e4f1048e26c356808fdfc
+      internalID: 1114224700
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 11_clubs
+      rect:
+        serializedVersion: 2
+        x: 412
+        y: 96
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8296303df84a63c5d89d78708a473207
+      internalID: -1859372938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 12_clubs
+      rect:
+        serializedVersion: 2
+        x: 361
+        y: 94
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 075282af55820bb5186129ea734f9644
+      internalID: -1021647081
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 12_goblets
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 250
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f6a51dff04739f520ad07eb17aa84201
+      internalID: -875238948
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 11_goblets
+      rect:
+        serializedVersion: 2
+        x: 413
+        y: 251
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ee8a3556330dcf981a6455aaef0901e9
+      internalID: -2014936770
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 6_golds
+      rect:
+        serializedVersion: 2
+        x: 564
+        y: 331
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a0f4cf66ea67ee90cb95e8903dfa3031
+      internalID: 1266711635
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 5_golds
+      rect:
+        serializedVersion: 2
+        x: 613
+        y: 329
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6a633079ee9722def889c1698a0cf689
+      internalID: -1884933141
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 4_golds
+      rect:
+        serializedVersion: 2
+        x: 665
+        y: 332
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 503675618258448ef80aeea9a39526c7
+      internalID: -1170336984
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 4_goblets
+      rect:
+        serializedVersion: 2
+        x: 665
+        y: 254
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 71d732f4e1c911d5d8a6f69b2e6247a1
+      internalID: -395845138
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 11_swords
+      rect:
+        serializedVersion: 2
+        x: 413
+        y: 174
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e7b2bee41dfbbcf97a7903d5599e8c6e
+      internalID: 392198121
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 5_goblets
+      rect:
+        serializedVersion: 2
+        x: 614
+        y: 253
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9ee9f61f22288933994aecae49c7beb4
+      internalID: -1592704898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 6_goblets
+      rect:
+        serializedVersion: 2
+        x: 564
+        y: 253
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6db3ef6c9b830813cbcb1feaa6a7eeeb
+      internalID: 1062052273
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 6_swords
+      rect:
+        serializedVersion: 2
+        x: 564
+        y: 175
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ae6c9f98c926c89bd8f39ba9a1b39475
+      internalID: -2132757131
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 5_swords
+      rect:
+        serializedVersion: 2
+        x: 617
+        y: 176
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f8960c01981728ac38e709990471f178
+      internalID: 1150109837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 4_swords
+      rect:
+        serializedVersion: 2
+        x: 665
+        y: 175
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d3a90849d1fb75d4294b92750ec03f82
+      internalID: 1746777358
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 6_clubs
+      rect:
+        serializedVersion: 2
+        x: 562
+        y: 95
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1ba2238bdf5cd6846836cf25531f8d2e
+      internalID: -604596101
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 5_clubs
+      rect:
+        serializedVersion: 2
+        x: 616
+        y: 97
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d78269bcfde52fde4b0f3ac5c43f7d97
+      internalID: 1458537726
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 4_clubs
+      rect:
+        serializedVersion: 2
+        x: 666
+        y: 95
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dc37f1d301a842b57b889d55db88ef3c
+      internalID: -270472489
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7_goblets
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 252
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 41a09b509b472ba78a3d3b3e3441f34d
+      internalID: 979232574
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7_clubs
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 176
+        width: 47
+        height: 76
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 45, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a7d4b191c55e5e0fbb444bd82c4c501a
+      internalID: 489214475
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 3_golds
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 330
+        width: 49
+        height: 79
+      alignment: 1
+      pivot: {x: 0, y: 1}
+      border: {x: 0, y: 0, z: 48, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e807622209af548e2ae1b944bcba85af
+      internalID: 1435786149
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 78f2bd7adc2af94a2a3109e71ff58a74
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      10_clubs: 1114224700
+      10_goblets: -331949583
+      10_golds: -728967406
+      10_swords: -1675968307
+      11_clubs: -1859372938
+      11_goblets: -2014936770
+      11_golds: 1982764768
+      11_swords: 392198121
+      12_clubs: -1021647081
+      12_goblets: -875238948
+      12_golds: -1099240300
+      12_swords: -285371479
+      1_clubs: -1563666577
+      1_goblets: 1874877980
+      1_golds: 1699134266
+      1_swords: -1762956319
+      2_clubs: 945481974
+      2_goblets: 2058424676
+      2_golds: -220030778
+      2_swords: -572512725
+      3_clubs: -32297164
+      3_goblets: 1237567100
+      3_golds: 1435786149
+      3_swords: 530071901
+      4_clubs: -270472489
+      4_goblets: -395845138
+      4_golds: -1170336984
+      4_swords: 1746777358
+      5_clubs: 1458537726
+      5_goblets: -1592704898
+      5_golds: -1884933141
+      5_swords: 1150109837
+      6: 1062052273
+      6_clubs: -604596101
+      6_goblets: 1062052273
+      6_golds: 1266711635
+      6_swords: -2132757131
+      7: 2122183766
+      7_clubs: 489214475
+      7_goblets: 979232574
+      7_golds: -1657053578
+      7_swords: 2122183766
+      Cartas_truco_1: 1850977229
+      Cartas_truco_3: 1369444626
+      Cartas_truco_5: -1949676490
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
