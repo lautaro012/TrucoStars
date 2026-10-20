@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d99e36ef486e73e438ae778331a97d84, type: 3}
+  m_Name: SimpleDestruction
+  m_EditorClassIdentifier: 
+  nameId: SimpleDestruction
+  nameString: Simple Destruction
+  description: Showcase of how you can add Destruction to your games easily, see
+    it in action and watch the full tutorial video.
+  tags: Mechanic, Polish
+  iconSprite: {fileID: 21300000, guid: 5b8b4f049bba90f4b8bafa549ea893dc, type: 3}
+  demoScene: {fileID: 102900000, guid: 877f3f2e853223f4fa5ed52c9838330f, type: 3}
+  walkthroughVideoYouTubeVideo:
+    youTubeId: https://www.youtube.com/watch?v=zscWMP7y5KA
+    title: 
+  tutorialVideoYouTubeVideo:
+    youTubeId: tPWMZ4Ic7PA
+    title: Awesome Easy DESTRUCTION in Unity! (Add SECRETS!)
+  relatedVideoYouTubeVideoArray: []

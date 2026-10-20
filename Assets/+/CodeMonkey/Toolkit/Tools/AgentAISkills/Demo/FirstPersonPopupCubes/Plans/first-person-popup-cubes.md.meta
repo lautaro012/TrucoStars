@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 12344585c701b8b42ab57166a563a9df
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/AgentAISkills/Demo/FirstPersonPopupCubes/Plans/first-person-popup-cubes.md
+  uploadId: 999768

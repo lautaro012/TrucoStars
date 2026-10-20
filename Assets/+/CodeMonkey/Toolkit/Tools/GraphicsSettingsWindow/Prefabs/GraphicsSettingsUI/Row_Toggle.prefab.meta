@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b3c30b4e9bfc5ec48b2659d40cbfac42
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/GraphicsSettingsWindow/Prefabs/GraphicsSettingsUI/Row_Toggle.prefab
+  uploadId: 999768

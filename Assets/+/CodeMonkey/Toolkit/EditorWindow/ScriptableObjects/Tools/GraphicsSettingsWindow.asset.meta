@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 218891c745b201d4ba80a91fa0c1abcb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/EditorWindow/ScriptableObjects/Tools/GraphicsSettingsWindow.asset
+  uploadId: 999768

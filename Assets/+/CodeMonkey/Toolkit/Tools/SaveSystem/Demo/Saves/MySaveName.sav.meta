@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: da70c50c27436ba459c7e8f3437c7637
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/SaveSystem/Demo/Saves/MySaveName.sav
+  uploadId: 999768

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 665e0e23368f6a943a7f7fee0c687b65
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/DayNightCycle/Prefabs/DayNightCycleUI.prefab
+  uploadId: 999768

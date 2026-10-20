@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 024a971f8745106429fc7b4223e020e3
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/GraphicsSettingsWindow/Prefabs/GraphicsSettingsBootstrap.prefab
+  uploadId: 999768

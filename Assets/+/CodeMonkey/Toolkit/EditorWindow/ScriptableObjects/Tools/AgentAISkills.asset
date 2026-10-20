@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d99e36ef486e73e438ae778331a97d84, type: 3}
+  m_Name: AgentAISkills
+  m_EditorClassIdentifier: 
+  nameId: AgentAISkills
+  nameString: Agent AI Skills
+  description: 'Agents know how to use the Toolkit''s various tools to help you in
+    making your games. There''s a bunch of Skills.md files to teach the Agent how
+    to do various things like setting up a scene with a First Person Controller and
+    an Interaction System and some logic happening every once in a while, etc, etc.
+
+'
+  tags: Utility
+  iconSprite: {fileID: 21300000, guid: ccc40796951d7a941acdec76162ea646, type: 3}
+  demoScene: {fileID: 102900000, guid: e7de12f0ce08d2d4fa3330adfa4eb228, type: 3}
+  walkthroughVideoYouTubeVideo:
+    youTubeId: https://www.youtube.com/watch?v=ZHUxd-qPQ8Y
+    title: 
+  tutorialVideoYouTubeVideo:
+    youTubeId: 7s7rmNeo8Wo
+    title: Getting Started with Unity AI!
+  relatedVideoYouTubeVideoArray: []

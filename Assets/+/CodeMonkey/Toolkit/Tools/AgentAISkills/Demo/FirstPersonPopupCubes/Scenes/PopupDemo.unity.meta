@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5e94b8ca43335b74f9ff8ff3bf9f080c
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/AgentAISkills/Demo/FirstPersonPopupCubes/Scenes/PopupDemo.unity
+  uploadId: 999768

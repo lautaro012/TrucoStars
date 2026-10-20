@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b1e6c78654e380e41a2778b54d50cbd9
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/AI/Skills/code-monkey-toolkit-shaders-and-effects/references/shader-properties.md
+  uploadId: 999768

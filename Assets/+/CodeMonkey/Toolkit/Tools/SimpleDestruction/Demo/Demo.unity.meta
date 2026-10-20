@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 877f3f2e853223f4fa5ed52c9838330f
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/SimpleDestruction/Demo/Demo.unity
+  uploadId: 999768

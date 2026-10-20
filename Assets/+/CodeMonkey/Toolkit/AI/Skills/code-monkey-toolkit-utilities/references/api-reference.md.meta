@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c4dde24623d46f748a687cf5931e8ce0
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/AI/Skills/code-monkey-toolkit-utilities/references/api-reference.md
+  uploadId: 999768

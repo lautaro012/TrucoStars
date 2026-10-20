@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a845fb7185bbe39418200536f948dee6
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/AI/Skills/code-monkey-toolkit-menus-and-settings/references/graphics-settings-api.md
+  uploadId: 999768

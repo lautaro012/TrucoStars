@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ba3a8e45f8bdc4a41bdf7ee3e706847d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/DayNightCycle/Animations/DirectionalLightsDayNightCycle.anim
+  uploadId: 999768

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 852be77982c11cb4bb77ba492c0310b6
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/AI/Skills/code-monkey-toolkit-utilities/SKILL.md
+  uploadId: 999768

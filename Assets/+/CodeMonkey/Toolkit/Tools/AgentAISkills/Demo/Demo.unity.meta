@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: e7de12f0ce08d2d4fa3330adfa4eb228
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/AgentAISkills/Demo/Demo.unity
+  uploadId: 999768

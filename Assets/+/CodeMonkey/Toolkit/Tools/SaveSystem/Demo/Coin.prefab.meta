@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b95f397e9350b534dac14958d54d3870
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/SaveSystem/Demo/Coin.prefab
+  uploadId: 999768

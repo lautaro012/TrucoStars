@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5acfc6e89e764a54aa8ade2faabcf594
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/GraphicsSettingsWindow/Prefabs/GraphicsSettingsUI.prefab
+  uploadId: 999768

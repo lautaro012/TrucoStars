@@ -1,3 +1,11 @@
 ﻿<Solution>
+  <Project Path="CodeMonkeyToolkit.csproj" />
+  <Project Path="LeanGUI.csproj" />
+  <Project Path="LeanTransition.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="CW.Common.csproj" />
+  <Project Path="LeanTransition.Editor.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="CodeMonkeyToolkitEditor.csproj" />
+  <Project Path="LeanCommon.csproj" />
 </Solution>

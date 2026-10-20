@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 37617415f46c764438b45d09e97d2fca
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/GraphicsSettingsWindow/Prefabs/GraphicsSettingsUI/Row_Dropdown.prefab
+  uploadId: 999768

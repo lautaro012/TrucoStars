@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 43d0748edea875c40983c8f8edd5de06
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/AI/Skills/code-monkey-toolkit-controllers-and-camera/SKILL.md
+  uploadId: 999768

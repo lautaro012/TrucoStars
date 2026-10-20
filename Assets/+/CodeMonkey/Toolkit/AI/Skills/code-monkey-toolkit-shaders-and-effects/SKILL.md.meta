@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ce838616796b9294d9a4e50984337c97
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/AI/Skills/code-monkey-toolkit-shaders-and-effects/SKILL.md
+  uploadId: 999768

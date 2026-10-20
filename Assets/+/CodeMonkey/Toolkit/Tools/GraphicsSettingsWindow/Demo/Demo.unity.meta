@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: dbe5a4cedd992324780c9739ba75e8c4
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/Tools/GraphicsSettingsWindow/Demo/Demo.unity
+  uploadId: 999768

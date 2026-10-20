@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e1badedd61a966d4a8fcd632dd90cd7b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/EditorWindow/ScriptableObjects/Tools/MainMenu.asset
+  uploadId: 999768

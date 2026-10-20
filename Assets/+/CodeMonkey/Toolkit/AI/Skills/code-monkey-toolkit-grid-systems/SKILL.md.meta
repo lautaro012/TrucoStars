@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b40a6945b552e1e4b94f50124663a8ec
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309282
+  packageName: Code Monkey Toolkit
+  packageVersion: 1.0.6
+  assetPath: Assets/CodeMonkey/Toolkit/AI/Skills/code-monkey-toolkit-grid-systems/SKILL.md
+  uploadId: 999768
