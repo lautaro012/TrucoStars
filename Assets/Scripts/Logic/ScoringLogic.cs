@@ -5,11 +5,6 @@ using UnityEngine;
 
 public class ScoringLogic 
 {
-    [Header("Reglas de la Casa")]
-    //? Valores default para proteccion
-    public int pointsToWin = 15;
-    public bool playWithFlor = false;
-    public bool playWithPicaPica = false;
     public int TrucoPointsInPlay { get; private set; } = 1;
 
     [Header("Estado de la ronda")]
@@ -17,22 +12,6 @@ public class ScoringLogic
     private int envidoPointsInPlay = 0;
     public TrucoStage trucoStage { get; private set; } = TrucoStage.None;
     private int pointsInPlay = 1;
-
-
-    /// <summary>
-    /// METODO LLAMADO AL PRINCIPIO DEL JUEGO, SETEA LAS REGLAS DE LA CASA.
-    /// </summary>
-    /// <param name="lobbyPoints"></param>
-    /// <param name="lobbyFlor"></param>
-    /// <param name="lobbyPica"></param>
-    public void ApplyLobbySettings(int lobbyPoints, bool lobbyFlor, bool lobbyPica)
-    {
-        pointsToWin = lobbyPoints;
-        playWithFlor = lobbyFlor;
-        playWithPicaPica = lobbyPica;
-        
-        Debug.Log($"[ScoringLogic] Reglas aplicadas: {pointsToWin} pts | Flor: {playWithFlor}");
-    }
 
     /// <summary>
     /// Calcula el valor de envido de una mano y lo devuelve

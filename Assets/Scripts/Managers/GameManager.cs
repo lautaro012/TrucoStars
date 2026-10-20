@@ -139,7 +139,6 @@ public class GameManager : NetworkBehaviour
         Seats = new Dictionary<int, PlayerData>();
         Seats_index = new Dictionary<int, SeatController>();
         playSlots_Seats = new Dictionary<int, PlaySlotView>();
-        //envidoValue_Seats = new();
         seatLayoutManager.OnSeatCreated += SeatLayoutManager_OnSeatCreated;
         tablePlayAreaManager.OnSlotsLaidOut += TablePlayAreaManager_OnSlotLaidOut;
         LastSeats = new int[2];
@@ -158,7 +157,20 @@ public class GameManager : NetworkBehaviour
         Team1Points.OnValueChanged += Team1Points_OnValueChanged;
         Team2Points.OnValueChanged += Team2Points_OnValueChanged;
         currentGameState.OnValueChanged += GameState_OnValueChanged;
-        currentRules = new PuntaYHachaRules(this, pointsToWin,true);
+        if (IsServer) 
+        {
+            if (HostSettings.Instance != null)
+            {
+                totalPlayers = HostSettings.Instance.totalPlayers;
+                pointsToWin = HostSettings.Instance.totalPoints; 
+                conFlor = HostSettings.Instance.flor;            
+                conPicaPica = HostSettings.Instance.puntaYHacha; 
+            }
+
+            currentRules = new TrucoArgentinoRules(this, pointsToWin, conFlor, conPicaPica); 
+
+        }
+        StartGame();
     }
     #endregion
     
@@ -207,8 +219,10 @@ public class GameManager : NetworkBehaviour
             int[] cards = ruleCardsInHands[i];
             int envidoPts = ruleEnvidoValues[i];
             ulong clientId = Seats[i].clientId;
+            Debug.Log($"[SERVER] Mandando {cards.Length} cartas al ClienteID {clientId} (Asiento {i})");
             CreateCardsClientRpc(envidoPts, cards, i, GetRpcTargetParams(clientId));
         }
+        
     }
     public void Bridge_MoveCardToTable(int cardIndex, int clientSeat, int cardId)
     {
@@ -235,6 +249,7 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     public void CreateSeatsAndPlayAreaClientRpc(int totalPlayers, Vector3 center, float radius, float heightY, float angleOffsetDeg = 0f)
     {
+        this.totalPlayers = totalPlayers;
         seatLayoutManager.CreateSeats(
             totalPlayers,
             center,
@@ -291,7 +306,6 @@ public class GameManager : NetworkBehaviour
     private void CreatePlayerHandsServerRpc()
     {
         SetPlayersDataClientRPC(Seats.Values.ToArray());
-        currentRules = new PuntaYHachaRules(this, pointsToWin,true);
         currentRules.StartHand();
         
         DealAnimationClientRpc(LastSeats[0]);
@@ -341,6 +355,7 @@ public class GameManager : NetworkBehaviour
     private void CreateCardsClientRpc(int envidoPoints, int[] cards, int seatindex, RpcParams rpcParams = default)
     {
         Seats_index[seatindex].SetCardsIds(cards);
+        Debug.Log($"[CLIENTE {NetworkManager.Singleton.LocalClientId}] ¡Recibí mis cartas para el asiento {seatindex}!");
         SentEnvidoValue?.Invoke(this, new OnSentEnvidoArgs
         {
             value = envidoPoints
@@ -484,6 +499,8 @@ public class GameManager : NetworkBehaviour
         if (cardParentIndex < 0 || cardParentIndex >= Seats[clientSeat].cardsInHands.Length) return; //? ParentCardId Error
         
         int cardId = currentRules.GetCardId(clientSeat, cardParentIndex); 
+        CardSO cardso = getCardSOfromCardIndex(cardId);
+        Debug.Log("SE TIRO " + cardso.cardName);
         if (cardId < 0)
         {
             Debug.LogWarning("Carta inválida o ya jugada en ese slot.");

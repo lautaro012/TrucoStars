@@ -10,8 +10,9 @@ public class TrucoArgentinoRules : GameRulesBase
     private int handCount = 0;
     private int firstToPlay = 0;
     private Hand currentHand;
-    public TrucoArgentinoRules(GameManager gameManager, int pointsToWin) : base(gameManager, pointsToWin) { }
-
+    public TrucoArgentinoRules(GameManager gm, int pointsToWin, bool playWithFlor, bool playWithPicaPica) 
+        : base(gm, pointsToWin, playWithFlor, playWithPicaPica) {}
+        
     /// <summary> 
     ///CREA LA MANO, AUMENTA EL CONTADOR DE MANOS Y SETEA EL PROXIMO EN JUGAR
     /// </summary>

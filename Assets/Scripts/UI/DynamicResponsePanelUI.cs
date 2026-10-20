@@ -42,7 +42,7 @@ public class DynamicResponsePanelUI : MonoBehaviour
 
         // Configuramos la vista
         txt.text = text;
-        btn.GetComponent<Image>().color = color;
+       // btn.GetComponent<Image>().color = color;
         
         // Configuramos la acción (el Lambda)
         btn.onClick.AddListener(() => onClickAction?.Invoke());

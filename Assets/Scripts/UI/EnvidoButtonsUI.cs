@@ -21,7 +21,7 @@ public class EnvidoButtonsUI : MonoBehaviour
 
     public void SetPointsText(int points)
     {
-        pointsText.text = points.ToString();
+        pointsText.text = "Envido [" + points.ToString() + "]";
     }
 
     public void Show() => gameObject.SetActive(true);

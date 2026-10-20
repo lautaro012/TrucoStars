@@ -11,6 +11,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private CurrentPointsTrackerUI pointsTrackerUI;
     [SerializeField] private DynamicResponsePanelUI responsePanel;
     [SerializeField] private WaitingForOpponentUI waitingForOpponent;
+    [SerializeField] private LogChat logChat;
 
     private void Start()
     {        
@@ -23,7 +24,10 @@ public class UIManager : MonoBehaviour
         GameManager.Instance.OnTeam1PointsChanged += (sender, e) => pointsTrackerUI.UpdateTeam1Points(e.points);
         GameManager.Instance.OnTeam2PointsChanged += (sender, e) => pointsTrackerUI.UpdateTeam2Points(e.points);
         GameManager.Instance.SentEnvidoValue += (sender, e) => envidoCallUI.SetPointsText(e.value);
-        GameManager.Instance.OnRoundWined += (sender, e) => pointsTrackerUI.AddRoundWinLight(e.winnerTeam);
+        GameManager.Instance.OnRoundWined += (sender, e) => {
+            pointsTrackerUI.AddRoundWinLight(e.winnerTeam);
+            logChat.GenerateNewLog("EL EQUIPO " + e.winnerTeam + "GANO LA RONDA");
+        };
 
         GameClientManager.Instance.PlayersDataReady += (sender, e) => {
             pointsTrackerUI.SetupTeamColor(GameClientManager.Instance.GetLocalTeam());
@@ -77,6 +81,9 @@ public class UIManager : MonoBehaviour
         else if (GameManager.Instance.currentGameState.Value == GameState.WaitingEnvido)
         {
             CheckEnvidoContext();
+        }else if (GameManager.Instance.currentGameState.Value == GameState.PlayingTurn)
+        {
+            EvaluateTurnUI();
         }
     }
 
@@ -131,6 +138,8 @@ public class UIManager : MonoBehaviour
         }
 
         responsePanel.Show();
+
+        logChat.GenerateNewLog("EL EQUIPO " + team + " CANTO " + callName);
     }
 
     private void BuildEnvidoResponse(int team, EnvidoStage stage)
@@ -154,6 +163,8 @@ public class UIManager : MonoBehaviour
         }
 
         responsePanel.Show();
+
+        logChat.GenerateNewLog($"EL EQUIPO {team} CANTÓ {stage}");
     }
 
     private void EvaluateTurnUI()

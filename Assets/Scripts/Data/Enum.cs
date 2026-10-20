@@ -37,3 +37,8 @@ public enum EnvidoStage
     RealEnvido,
     FaltaEnvido
 }
+public enum Truco
+{
+    ARGENTINO,
+    BRASILERO
+}

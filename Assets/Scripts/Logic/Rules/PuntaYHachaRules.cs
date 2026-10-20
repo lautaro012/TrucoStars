@@ -14,7 +14,8 @@ public class PuntaYHachaRules : GameRulesBase
     private int handCount = 0;
     private int firstToPlay = 0;
     private Hand currentHand;
-    public PuntaYHachaRules(GameManager gameManager, int pointsToWin, bool sumPointsMode) : base(gameManager, pointsToWin) 
+    public PuntaYHachaRules(GameManager gm, int pointsToWin, bool playWithFlor, bool playWithPicaPica, bool sumPointsMode) 
+        : base(gm, pointsToWin, playWithFlor, playWithPicaPica) 
     { 
         this.calculatePointsDifference = sumPointsMode;
     }
@@ -257,17 +258,7 @@ public class PuntaYHachaRules : GameRulesBase
         currentHand.CloseHand();
         
         EndMiniDuel(winnerTeam, scoringLogic.GetPointsInPlay());
-    } 
-    public override void ProcessTrucoCall(int callerSeat, int callerTeam)
-    {
-        throw new System.NotImplementedException();
     }
-
-    public override void ProcessTrucoConfirmation(int responderSeat, bool accepted)
-    {
-        throw new System.NotImplementedException();
-    }
-
     public override void ResetHandData()
     {
         cardsInHands.Clear();
@@ -282,14 +273,104 @@ public class PuntaYHachaRules : GameRulesBase
         ctx.envidoStage = EnvidoStage.None;
         gameManager.currentContext.Value = ctx;
     }
+    public override void ProcessTrucoCall(int callerSeat, int callerTeam)
+    {
+        scoringLogic.NextTrucoStage();
+
+        var newContext = gameManager.currentContext.Value;
+        newContext.trucoCallerTeam = callerTeam;
+        newContext.trucoStage = scoringLogic.trucoStage;
+        gameManager.currentContext.Value = newContext;
+        
+        gameManager.SetCurrentGameState(GameState.WaitingTruco);
+    }
+
+    public override void ProcessTrucoConfirmation(int responderSeat, bool accepted)
+    {
+        if (gameManager.currentGameState.Value != GameState.WaitingTruco) return;
+
+        if (accepted)
+        {
+            scoringLogic.TrucoAccepted();
+            Debug.Log($"[PICA PICA] Truco aceptado en el duelo {currentDuelIndex}. Se juega por {scoringLogic.GetPointsInPlay()} puntos.");
+            gameManager.SetCurrentGameState(GameState.PlayingTurn);
+        }
+        else
+        {
+            ProcessSurrender(responderSeat);
+        }
+    }
+
     public override void ProcessEnvidoCall(EnvidoStage call, int callerSeat, int callerTeam)
     {
-        throw new System.NotImplementedException();
+        if (gameManager.currentGameState.Value != GameState.PlayingTurn && gameManager.currentGameState.Value != GameState.WaitingEnvido) return;
+
+        if (scoringLogic.envidoStage == EnvidoStage.RealEnvido && call == EnvidoStage.Envido) return;
+        if (scoringLogic.envidoStage == EnvidoStage.FaltaEnvido) return;
+
+        if (gameManager.currentGameState.Value == GameState.WaitingEnvido)
+        {
+            if (gameManager.currentContext.Value.envidoCallerTeam == callerTeam) return;
+        }
+
+        scoringLogic.EnvidoCalled();
+        scoringLogic.NextEnvidoStage(call);
+
+        var newEnvidoContext = gameManager.currentContext.Value;
+        newEnvidoContext.envidoCallerTeam = callerTeam;
+        newEnvidoContext.envidoStage = scoringLogic.envidoStage;
+        gameManager.currentContext.Value = newEnvidoContext;
+
+        gameManager.SetCurrentGameState(GameState.WaitingEnvido);
     }
 
     public override void ProcessEnvidoConfirmation(int responderSeat, bool accepted)
     {
-        throw new System.NotImplementedException();
+        if (gameManager.currentGameState.Value != GameState.WaitingEnvido) return;
+
+        int responderTeam = gameManager.GetPlayerData(responderSeat).team;
+        int winnerTeam = -1;
+        int pointsWon = 0;
+
+        if (accepted)
+        {
+            scoringLogic.AddEnvidoPointsByStage();
+            int manoSeat = duelPairs[currentDuelIndex, 0];
+            int pieSeat = duelPairs[currentDuelIndex, 1];
+
+            int envidoMano = envidoValue_Seats[manoSeat];
+            int envidoPie = envidoValue_Seats[pieSeat];
+            int winnerSeat = (envidoPie > envidoMano) ? pieSeat : manoSeat;
+            winnerTeam = gameManager.GetPlayerData(winnerSeat).team;
+            Debug.Log($"[PICA PICA] Envido querido: Mano ({envidoMano}) vs Pie ({envidoPie}). Gana Equipo {winnerTeam}");
+        }
+        else
+        {
+            winnerTeam = (responderTeam == 1) ? 2 : 1;
+        }
+
+        if (scoringLogic.envidoStage == EnvidoStage.FaltaEnvido)
+        {
+            int enemyPoints = (winnerTeam == 1) ? gameManager.GetTeam2TotalPoints() : gameManager.GetTeam1TotalPoints();
+            pointsWon = 15 - (enemyPoints % 15); 
+        }
+        else
+        {
+            pointsWon = scoringLogic.GetEnvidoPointsInPlay();
+        } 
+        if (winnerTeam == 1) team1AccumulatedPoints += pointsWon;
+        else if (winnerTeam == 2) team2AccumulatedPoints += pointsWon;
+
+        Debug.Log($"[PICA PICA] Envido resuelto. Suma {pointsWon} puntos el Equipo {winnerTeam} al acumulado.");
+
+        var ctx = gameManager.currentContext.Value;
+        ctx.envidoCallerTeam = -1;
+        gameManager.currentContext.Value = ctx;
+
+        if (gameManager.currentGameState.Value != GameState.RoundFinished)
+        {
+            gameManager.SetCurrentGameState(GameState.PlayingTurn);
+        }
     }
 
     protected override void CheckForGameWin()

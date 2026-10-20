@@ -8,14 +8,18 @@ public class CurrentPointsTrackerUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI Team1Title;
     [SerializeField] private TextMeshProUGUI Team2Title;
 
-    [SerializeField] private TextMeshProUGUI RoundNumber;
-    [SerializeField] private TextMeshProUGUI TurnIndicator;
+    //[SerializeField] private TextMeshProUGUI RoundNumber;
+    [SerializeField] private GameObject TurnIndicator;
     [SerializeField] private GameObject[] P1_Light_Tracker = new GameObject[2];
     [SerializeField] private GameObject[] P2_Light_Tracker = new GameObject[2];
     
     private int roundsWonByTeam1 = 0;
     private int roundsWonByTeam2 = 0;
 
+    private void Awake()
+    {
+        RestartLightPoints();
+    }
     public void SetupTeamColor(int myTeam)
     {
         if (myTeam == 1) Team1Title.color = Color.green;
@@ -29,6 +33,7 @@ public class CurrentPointsTrackerUI : MonoBehaviour
 
     public void AddRoundWinLight(int winnerTeam)
     {
+        Debug.Log("ESTA RONDA ES DE  " + winnerTeam);
         if(winnerTeam == 1 && roundsWonByTeam1 < P1_Light_Tracker.Length)
         {
             P1_Light_Tracker[roundsWonByTeam1].SetActive(true);
@@ -43,12 +48,12 @@ public class CurrentPointsTrackerUI : MonoBehaviour
 
     public void SetRoundText(int currentRound)
     {
-        RoundNumber.text = currentRound.ToString();
+       // RoundNumber.text = currentRound.ToString();
     }
 
     public void SetTurnIndicator(bool isMyTurn)
     {
-        TurnIndicator.text = isMyTurn ? "YOUR TURN" : "NOT YOUR TURN";
+        TurnIndicator.SetActive(isMyTurn);
     }
 
     public void RestartLightPoints()

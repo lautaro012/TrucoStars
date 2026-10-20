@@ -2,10 +2,14 @@ public abstract class GameRulesBase
 {
     protected GameManager gameManager; 
     protected int pointsToWin;
-    public GameRulesBase(GameManager gameManager, int pointsToWin)
+    protected bool playWithFlor;
+    protected bool playWithPicaPica;
+    public GameRulesBase(GameManager gm, int pointsToWin, bool playWithFlor, bool playWithPicaPica)
     {
-        this.gameManager = gameManager;
+        this.gameManager = gm;
         this.pointsToWin = pointsToWin;
+        this.playWithFlor = playWithFlor;
+        this.playWithPicaPica = playWithPicaPica;
     }
 
     // 1. INICIALIZACIÓN
